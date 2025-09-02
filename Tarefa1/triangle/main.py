@@ -15,8 +15,8 @@ def initialize ():
   glClearColor(1,1,1,1)
   tri = Triangle()
   shd = Shader()
-  shd.AttachVertexShader("shaders/vertex.glsl")
-  shd.AttachFragmentShader("shaders/fragment.glsl")
+  shd.AttachVertexShader("Tarefa1/triangle/shaders/vertex.glsl")
+  shd.AttachFragmentShader("Tarefa1/triangle/shaders/fragment.glsl")
   shd.Link()
 
 def display ():
