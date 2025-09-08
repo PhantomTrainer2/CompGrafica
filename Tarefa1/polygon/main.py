@@ -12,38 +12,34 @@ def keyboard (win, key, scancode, action, mods):
 
 def initialize ():
   global poly, shd
-  glClearColor(0.1, 0.1, 0.1, 1.0)
+  glClearColor(1, 1, 1, 1)
 
   vertices = [
-      (-0.8, -0.8),  # 0: Vértice inferior esquerdo (Verde)
-      (-0.7, 0.7),   # 1: Vértice superior esquerdo (Azul)
-      (0.0, 0.3),    # 2: Vértice interno (Vermelho)
-      (0.9, 0.8),    # 3: Vértice superior direito (Amarelo)
-      (0.6, -0.7)    # 4: Vértice inferior direito (Roxo)
-  ]
+      (-0.8, -0.8),  
+      (-0.7, 0.7),  
+      (0.0, 0.3), 
+      (0.9, 0.8),
+      (0.6, -0.7)
+      ]
   
   colors = [
-      (144, 238, 144),  # 0: Verde claro
-      (173, 216, 230),  # 1: Azul claro
-      (205, 92, 92),    # 2: Vermelho/Marrom
-      (255, 255, 224),  # 3: Amarelo claro
-      (221, 160, 221)   # 4: Roxo claro
+      (0, 255, 0),
+      (0, 0, 255),
+      (255, 0, 0),
+      (255, 255, 0),
+      (255, 0, 255)
   ]
 
-  # 2. Definir a "receita" dos triângulos manualmente
   indices = [
-      0, 1, 2,  # Primeiro triângulo (Verde, Azul, Vermelho)
-      0, 2, 4,  # Segundo triângulo (Verde, Vermelho, Roxo)
-      2, 3, 4   # Terceiro triângulo (Vermelho, Amarelo, Roxo)
+      0, 1, 2,
+      0, 2, 4,
+      2, 3, 4  
   ]
 
-  # 3. Criar o polígono passando os vértices, cores E os índices
   poly = Polygon(vertices, colors, indices)
   
-  # --- FIM DAS ALTERAÇÕES ---
   
   shd = Shader()
-  # Use o seu caminho correto para os shaders
   shd.AttachVertexShader("Tarefa1/polygon/shaders/vertex.glsl")
   shd.AttachFragmentShader("Tarefa1/polygon/shaders/fragment.glsl")
   shd.Link()
@@ -63,7 +59,6 @@ def main():
   glfw.window_hint(glfw.OPENGL_PROFILE, glfw.OPENGL_CORE_PROFILE)
   glfw.window_hint(glfw.OPENGL_FORWARD_COMPAT,GL_TRUE)
   
-  # Usando o tamanho de tela original que você preferiu
   win = glfw.create_window(600, 400, "Polygon test (com Índices)", None, None)
   
   if not win:
