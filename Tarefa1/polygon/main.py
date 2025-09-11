@@ -40,8 +40,8 @@ def initialize ():
   
   
   shd = Shader()
-  shd.AttachVertexShader("Tarefa1/polygon/shaders/vertex.glsl")
-  shd.AttachFragmentShader("Tarefa1/polygon/shaders/fragment.glsl")
+  shd.AttachVertexShader("shaders/vertex.glsl")
+  shd.AttachFragmentShader("shaders/fragment.glsl")
   shd.Link()
 
 def display ():
