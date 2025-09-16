@@ -6,7 +6,6 @@ import datetime
 import ctypes
 from shader import Shader
 
-# ---------- Cria um VAO para o círculo (face do relógio) ----------
 def create_circle_vao(radius=0.9, segments=64):
     verts = []
     verts.extend([0.0, 0.0, 0.0, 1.0,  1.0, 1.0, 1.0, 1.0])
@@ -35,7 +34,6 @@ def create_circle_vao(radius=0.9, segments=64):
     count = 1 + segments + 1
     return vao, count
 
-# ---------- Cria um VAO + VBO + EBO para um retângulo atualizável ----------
 _base_quad = [(0.0, -0.5), (1.0, -0.5), (1.0, 0.5), (0.0, 0.5)]
 
 def create_quad_vao():
@@ -64,7 +62,6 @@ def create_quad_vao():
 
     return vao, vbo, ebo, len(indices)
 
-# ---------- Atualiza vértices de um retângulo transformado ----------
 def draw_quad_cpu(vao, vbo, count, angle_deg, length, thickness, color, offset=0.0):
     rad = math.radians(-angle_deg)
     c = math.cos(rad)
@@ -78,7 +75,6 @@ def draw_quad_cpu(vao, vbo, count, angle_deg, length, thickness, color, offset=0
         ys = y0 * thickness
         xr = c * xs - s * ys
         yr = s * xs + c * ys
-        # aplica offset para "empurrar" para a borda do círculo
         xr += offset * c
         yr += offset * s
         data.extend([xr, yr, 0.0, 1.0, r, g, b, a])
@@ -92,7 +88,6 @@ def draw_quad_cpu(vao, vbo, count, angle_deg, length, thickness, color, offset=0
     glDrawElements(GL_TRIANGLES, count, GL_UNSIGNED_INT, None)
     glBindVertexArray(0)
 
-# ---------- Main ----------
 def main():
     if not glfw.init():
         return
@@ -125,7 +120,6 @@ def main():
     hour_len, minute_len, second_len = 0.45, 0.7, 0.85
     hour_thick, minute_thick, second_thick = 0.06, 0.04, 0.02
 
-    # loop principal
     while not glfw.window_should_close(win):
         glClear(GL_COLOR_BUFFER_BIT)
         shader.UseProgram()
@@ -140,18 +134,15 @@ def main():
         angle_hour = hour * 30.0 + -90
 
 
-        # círculo branco (fundo do relógio)
         glBindVertexArray(circle_vao)
         glDrawArrays(GL_TRIANGLE_FAN, 0, circle_count)
         glBindVertexArray(0)
 
-        # marcações das horas
         for h in range(12):
             angle = h * 30.0
             draw_quad_cpu(mark_vao, mark_vbo, mark_count,
                           angle, 0.08, 0.02, (0.0, 0.0, 0.0), offset=0.82)
 
-        # ponteiros
         draw_quad_cpu(pointer_vao, pointer_vbo, pointer_count, angle_hour, hour_len, hour_thick, (0.0, 0.0, 0.0))
         draw_quad_cpu(pointer_vao, pointer_vbo, pointer_count, angle_min, minute_len, minute_thick, (0.0, 0.0, 0.0))
         draw_quad_cpu(pointer_vao, pointer_vbo, pointer_count, angle_sec, second_len, second_thick, (1.0, 0.0, 0.0))
