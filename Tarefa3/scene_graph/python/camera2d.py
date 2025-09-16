@@ -1,6 +1,6 @@
 import glm
 from OpenGL.GL import *
-from .camera import *
+from camera import *
 
 class Camera2D (Camera):
   def __init__(self, xmin=-1, xmax=1, ymin=-1, ymax=1):
