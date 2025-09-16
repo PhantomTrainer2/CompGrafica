@@ -70,15 +70,15 @@ class Shader:
       raise SystemError("Type not supported in Shader.SetUniform: " + str(tp))
     
   def ActiveTexture (self, varname):
-    self.SetUniform(varname,self.texunit)
-    glActiveTexture(GL_TEXTURE0+self.texunit)
-    self.texunit += 1
+    self.SetUniform(varname,self.textunit)
+    glActiveTexture(GL_TEXTURE0+self.textunit)
+    self.textunit += 1
   
   def DeactiveTexture (self):
-    self.texunit -= 1
+    self.textunit -= 1
 
   def GetCurrentUnit (self):
-    return self.texunit
+    return self.textunit
 
   def Load (self, st):
     st.PushShader(self)
