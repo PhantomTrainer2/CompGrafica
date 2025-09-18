@@ -13,15 +13,13 @@ from node import Node
 from transform import Transform
 from material import Material
 from shader import Shader
-from texture import Texture
-from camera2d import Camera2D
+from camera2d import Camera2D # Removido o import de Texture
 from luxor.disk import Disk
-from solar_system_animation import SolarSystemAnimation # Nosso arquivo de animação corrigido
+from solar_system_animation import SolarSystemAnimation
 
 # --- Variáveis Globais ---
 scene = None
 state = None
-# A engine de animação agora será gerenciada pela cena
 last_time = 0.0
 
 def init_app():
@@ -31,104 +29,88 @@ def init_app():
     script_dir = os.path.dirname(os.path.abspath(__file__))
     project_root = os.path.dirname(script_dir)
     shaders_path = os.path.join(project_root, 'shaders')
-    images_path = os.path.join(project_root, 'images')
 
     # --- Criação de Assets ---
-    textured_shader = Shader()
-    vertex_shader_file = os.path.join(shaders_path, 'ilum_vert', 'vertex_texture.glsl')
-    fragment_shader_file = os.path.join(shaders_path, 'ilum_vert', 'fragment_texture.glsl')
-    textured_shader.AttachVertexShader(vertex_shader_file)
-    textured_shader.AttachFragmentShader(fragment_shader_file)
-    textured_shader.Link()
+    # 1. Troque os shaders para os de iluminação
+    illum_shader = Shader()
+    vertex_shader_file = os.path.join(shaders_path, 'ilum_vert', 'vertex.glsl')
+    fragment_shader_file = os.path.join(shaders_path, 'ilum_vert', 'fragment.glsl')
+    illum_shader.AttachVertexShader(vertex_shader_file)
+    illum_shader.AttachFragmentShader(fragment_shader_file)
+    illum_shader.Link()
 
     # --- Configuração da Fonte de Luz ---
-    textured_shader.UseProgram()
+    illum_shader.UseProgram()
     light_pos = glm.vec4(0.0, 0.0, 1.0, 0.0)
-    light_amb = glm.vec4(0.2, 0.2, 0.2, 1.0)
+    light_amb = glm.vec4(0.3, 0.3, 0.3, 1.0) # Luz ambiente um pouco mais forte
     light_dif = glm.vec4(1.0, 1.0, 1.0, 1.0)
     light_spe = glm.vec4(1.0, 1.0, 1.0, 1.0)
-    textured_shader.SetUniform("lpos", light_pos)
-    textured_shader.SetUniform("lamb", light_amb)
-    textured_shader.SetUniform("ldif", light_dif)
-    textured_shader.SetUniform("lspe", light_spe)
+    illum_shader.SetUniform("lpos", light_pos)
+    illum_shader.SetUniform("lamb", light_amb)
+    illum_shader.SetUniform("ldif", light_dif)
+    illum_shader.SetUniform("lspe", light_spe)
     glUseProgram(0)
 
-    # --- Continuação da Criação de Assets ---
-    sun_texture = Texture(GL_TEXTURE0, os.path.join(images_path, 'sun.jpg'))
-    earth_texture = Texture(GL_TEXTURE1, os.path.join(images_path, 'earth.jpg'))
-    moon_texture = Texture(GL_TEXTURE2, os.path.join(images_path, 'moon.jpg'))
-
-    sun_material = Material(1.0, 1.0, 1.0)
-    earth_material = Material(1.0, 1.0, 1.0)
-    moon_material = Material(1.0, 1.0, 1.0)
+    sun_material = Material(1.0, 1.0, 0.0) # Amarelo
+    earth_material = Material(0.2, 0.2, 1.0) # Azul
+    moon_material = Material(1.0, 1.0, 1.0) # Branco
     disk_shape = Disk(segments=100)
 
     # --- Construção do Grafo de Cena ---
     root_node = Node()
-    
-    # ATENÇÃO: Mudanças na forma como criamos as transformações
-    # 1. Crie transformações SEPARADAS para escala e rotação
     sun_scale = Transform()
-    sun_scale.Scale(2.0, 2.0, 2.0) # <--- CONTROLE O TAMANHO DO SOL AQUI
-    sun_spin = Transform() # Este será controlado pela animação
+    sun_scale.Scale(3.0, 3.0, 3.0)
+    sun_spin = Transform() 
 
     earth_orbit = Transform()
     earth_translate = Transform()
-    earth_translate.Translate(2.5, 0, 0)
+    earth_translate.Translate(3.0, 0, 0) # Distância ajustada
     earth_scale = Transform()
-    earth_scale.Scale(0.8, 0.8, 0.8) # <--- CONTROLE O TAMANHO DA TERRA AQUI
-    earth_spin = Transform() # Este será controlado pela animação
+    earth_scale.Scale(0.8, 0.8, 0.8)
+    earth_spin = Transform() 
     
     moon_orbit = Transform()
     moon_translate = Transform()
-    moon_translate.Translate(0.8, 0, 0)
-    moon_scale_trf = Transform() # Renomeado para não confundir com a variável moon_scale anterior
+    moon_translate.Translate(1.0, 0, 0) # Distância ajustada
+    moon_scale_trf = Transform()
     moon_scale_trf.Scale(0.3, 0.3, 0.3)
     
-    # 2. Monte a hierarquia com a nova estrutura (escala -> rotação -> objeto)
-    moon_leaf_node = Node(trf=moon_scale_trf, apps=[moon_texture, moon_material], shps=[disk_shape])
+    # 3. Monte a hierarquia sem as texturas
+    moon_leaf_node = Node(trf=moon_scale_trf, apps=[moon_material], shps=[disk_shape])
     moon_translate_node = Node(trf=moon_translate, nodes=[moon_leaf_node])
     moon_orbit_node = Node(trf=moon_orbit, nodes=[moon_translate_node])
     
-    earth_spin_node = Node(trf=earth_spin, apps=[earth_texture, earth_material], shps=[disk_shape])
-    earth_scale_node = Node(trf=earth_scale, nodes=[earth_spin_node]) # Nó de escala é pai do nó de rotação
+    earth_spin_node = Node(trf=earth_spin, apps=[earth_material], shps=[disk_shape])
+    earth_scale_node = Node(trf=earth_scale, nodes=[earth_spin_node])
     earth_translate_node = Node(trf=earth_translate, nodes=[earth_scale_node, moon_orbit_node])
     earth_orbit_node = Node(trf=earth_orbit, nodes=[earth_translate_node])
     
-    sun_spin_node = Node(shader=textured_shader, trf=sun_spin, apps=[sun_texture, sun_material], shps=[disk_shape])
-    sun_scale_node = Node(trf=sun_scale, nodes=[sun_spin_node]) # Nó de escala é pai do nó de rotação
-    earth_orbit_node.SetShader(textured_shader)
+    # 4. Use o novo shader de iluminação
+    sun_spin_node = Node(shader=illum_shader, trf=sun_spin, apps=[sun_material], shps=[disk_shape])
+    sun_scale_node = Node(trf=sun_scale, nodes=[sun_spin_node])
+    earth_orbit_node.SetShader(illum_shader)
 
     root_node.AddNode(earth_orbit_node)
-    root_node.AddNode(sun_scale_node) # Adiciona o nó de escala do sol à cena
+    root_node.AddNode(sun_scale_node)
 
     scene = Scene(root_node)
-
-    # 3. A engine de animação continua controlando os mesmos transforms de rotação
     engine = SolarSystemAnimation(earth_orbit, moon_orbit, earth_spin, sun_spin)
     scene.AddEngine(engine)
     
-    camera = Camera2D(xmin=-4, xmax=4, ymin=-4, ymax=4)
+    camera = Camera2D(xmin=-5, xmax=5, ymin=-5, ymax=5)
     state = State(camera)
-    
+
+# ... (as funções update_and_draw e main continuam exatamente as mesmas)
 def update_and_draw():
     global last_time
-    
     current_time = glfw.get_time()
     dt = current_time - last_time
     last_time = current_time
-
     glClearColor(0.0, 0.0, 0.1, 1.0)
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-    
     if scene and state:
-        # A cena agora gerencia a atualização dos engines e a renderização
-        # O engine.Update agora deve ser chamado com dt (delta time)
-        # Mas a cena já faz isso por nós quando chamamos scene.Update(dt)
-        # A animação, no entanto, foi feita com tempo absoluto, então passamos current_time
         for e in scene.engines:
             e.Update(current_time)
-            
         scene.Render(state.camera)
 
 def main():
@@ -141,10 +123,8 @@ def main():
         return
     glfw.make_context_current(window)
     glEnable(GL_DEPTH_TEST)
-    
     init_app()
-    last_time = glfw.get_time() # Inicializa o contador de tempo
-    
+    last_time = glfw.get_time()
     while not glfw.window_should_close(window):
         update_and_draw()
         glfw.swap_buffers(window)
