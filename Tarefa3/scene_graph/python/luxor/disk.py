@@ -1,5 +1,3 @@
-# luxor/disk.py
-
 import numpy as np
 from OpenGL.GL import *
 from shape import Shape 
@@ -16,20 +14,18 @@ class Disk(Shape):
 
     def _generate_vertices(self):
         vertices = []
-        normal = [0.0, 0.0, 1.0] # Normal apontando para a câmera
+        normal = [0.0, 0.0, 1.0]
 
-        # Vértice central
-        vertices.extend([0.0, 0.0, 0.0]) # Posição (x, y, z)
-        vertices.extend(normal)          # Normal (nx, ny, nz)
+        vertices.extend([0.0, 0.0, 0.0])
+        vertices.extend(normal)
 
-        # Vértices da borda
         for i in range(self.segments + 1):
             angle = i * (2.0 * math.pi / self.segments)
             x = math.cos(angle) * 0.5
             y = math.sin(angle) * 0.5
             
-            vertices.extend([x, y, 0.0]) # Posição
-            vertices.extend(normal)      # Normal
+            vertices.extend([x, y, 0.0])
+            vertices.extend(normal)
             
         self.vertex_data = np.array(vertices, dtype=np.float32)
 
@@ -42,13 +38,11 @@ class Disk(Shape):
             glBindBuffer(GL_ARRAY_BUFFER, self.vbo)
             glBufferData(GL_ARRAY_BUFFER, self.vertex_data.nbytes, self.vertex_data, GL_STATIC_DRAW)
             
-            stride = 6 * 4  # 6 floats por vértice (x,y,z,nx,ny,nz)
+            stride = 6 * 4 
             
-            # Atributo de posição: layout (location=0)
             glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, stride, ctypes.c_void_p(0))
             glEnableVertexAttribArray(0)
             
-            # Atributo do normal: layout (location=1)
             glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, stride, ctypes.c_void_p(3 * 4))
             glEnableVertexAttribArray(1)
             

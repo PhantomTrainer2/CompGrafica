@@ -1,23 +1,19 @@
-# python/main_animation.py
-
 import glfw
 import time
 import os
 from OpenGL.GL import *
 import glm
 
-# Imports da sua biblioteca
 from scene import Scene
 from state import State
 from node import Node
 from transform import Transform
 from material import Material
 from shader import Shader
-from camera2d import Camera2D # Removido o import de Texture
+from camera2d import Camera2D
 from luxor.disk import Disk
 from solar_system_animation import SolarSystemAnimation
 
-# --- Variáveis Globais ---
 scene = None
 state = None
 last_time = 0.0
@@ -25,13 +21,10 @@ last_time = 0.0
 def init_app():
     global scene, state
 
-    # --- Construção de Caminhos ---
     script_dir = os.path.dirname(os.path.abspath(__file__))
     project_root = os.path.dirname(script_dir)
     shaders_path = os.path.join(project_root, 'shaders')
 
-    # --- Criação de Assets ---
-    # 1. Troque os shaders para os de iluminação
     illum_shader = Shader()
     vertex_shader_file = os.path.join(shaders_path, 'ilum_vert', 'vertex.glsl')
     fragment_shader_file = os.path.join(shaders_path, 'ilum_vert', 'fragment.glsl')
@@ -39,10 +32,9 @@ def init_app():
     illum_shader.AttachFragmentShader(fragment_shader_file)
     illum_shader.Link()
 
-    # --- Configuração da Fonte de Luz ---
     illum_shader.UseProgram()
     light_pos = glm.vec4(0.0, 0.0, 1.0, 0.0)
-    light_amb = glm.vec4(0.3, 0.3, 0.3, 1.0) # Luz ambiente um pouco mais forte
+    light_amb = glm.vec4(0.3, 0.3, 0.3, 1.0) 
     light_dif = glm.vec4(1.0, 1.0, 1.0, 1.0)
     light_spe = glm.vec4(1.0, 1.0, 1.0, 1.0)
     illum_shader.SetUniform("lpos", light_pos)
@@ -51,12 +43,11 @@ def init_app():
     illum_shader.SetUniform("lspe", light_spe)
     glUseProgram(0)
 
-    sun_material = Material(1.0, 1.0, 0.0) # Amarelo
-    earth_material = Material(0.2, 0.2, 1.0) # Azul
-    moon_material = Material(1.0, 1.0, 1.0) # Branco
+    sun_material = Material(1.0, 1.0, 0.0)
+    earth_material = Material(0.2, 0.2, 1.0)
+    moon_material = Material(1.0, 1.0, 1.0)
     disk_shape = Disk(segments=100)
 
-    # --- Construção do Grafo de Cena ---
     root_node = Node()
     sun_scale = Transform()
     sun_scale.Scale(3.0, 3.0, 3.0)
@@ -64,18 +55,17 @@ def init_app():
 
     earth_orbit = Transform()
     earth_translate = Transform()
-    earth_translate.Translate(3.0, 0, 0) # Distância ajustada
+    earth_translate.Translate(3.0, 0, 0)
     earth_scale = Transform()
     earth_scale.Scale(0.8, 0.8, 0.8)
     earth_spin = Transform() 
     
     moon_orbit = Transform()
     moon_translate = Transform()
-    moon_translate.Translate(1.0, 0, 0) # Distância ajustada
+    moon_translate.Translate(1.0, 0, 0)
     moon_scale_trf = Transform()
     moon_scale_trf.Scale(0.3, 0.3, 0.3)
     
-    # 3. Monte a hierarquia sem as texturas
     moon_leaf_node = Node(trf=moon_scale_trf, apps=[moon_material], shps=[disk_shape])
     moon_translate_node = Node(trf=moon_translate, nodes=[moon_leaf_node])
     moon_orbit_node = Node(trf=moon_orbit, nodes=[moon_translate_node])
@@ -85,7 +75,6 @@ def init_app():
     earth_translate_node = Node(trf=earth_translate, nodes=[earth_scale_node, moon_orbit_node])
     earth_orbit_node = Node(trf=earth_orbit, nodes=[earth_translate_node])
     
-    # 4. Use o novo shader de iluminação
     sun_spin_node = Node(shader=illum_shader, trf=sun_spin, apps=[sun_material], shps=[disk_shape])
     sun_scale_node = Node(trf=sun_scale, nodes=[sun_spin_node])
     earth_orbit_node.SetShader(illum_shader)
@@ -100,7 +89,6 @@ def init_app():
     camera = Camera2D(xmin=-5, xmax=5, ymin=-5, ymax=5)
     state = State(camera)
 
-# ... (as funções update_and_draw e main continuam exatamente as mesmas)
 def update_and_draw():
     global last_time
     current_time = glfw.get_time()
