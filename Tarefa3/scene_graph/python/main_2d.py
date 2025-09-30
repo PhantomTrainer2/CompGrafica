@@ -103,7 +103,7 @@ def init_app():
     engine = SolarSystemAnimation(earth_orbit, moon_orbit, earth_spin, sun_spin, venus_orbit, venus_spin)
     scene.AddEngine(engine)
     
-    camera = Camera2D(xmin=-5, xmax=5, ymin=-5, ymax=5)
+    camera = Camera2D(xmin=-10, xmax=10, ymin=-10, ymax=10)
     state = State(camera)
 
 def update_and_draw():
