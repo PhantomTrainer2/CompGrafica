@@ -12,7 +12,7 @@ from material import Material
 from shader import Shader
 from camera2d import Camera2D
 from luxor.disk import Disk
-from solar_system_animation import SolarSystemAnimation
+from luxor.animation import SolarSystemAnimation
 
 scene = None
 state = None
