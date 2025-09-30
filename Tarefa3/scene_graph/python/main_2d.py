@@ -134,30 +134,6 @@ def init_app():
     scene.AddEngine(engine)
     camera = Camera2D(xmin=-10, xmax=10, ymin=-10, ymax=10)
     state = State(camera)
-
-def update_and_draw():
-    global last_time, earth_shader
-    current_time = glfw.get_time()
-    last_time = current_time
-    
-    glClearColor(0.0, 0.0, 0.1, 1.0)
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-
-    # --- ATUALIZAÇÃO DO DESLOCAMENTO DA TEXTURA DA TERRA ---
-    # Você pode mudar a velocidade alterando o valor -0.05
-    earth_texture_rotation_speed = -0.05
-    texture_offset = current_time * earth_texture_rotation_speed
-
-    # Ativa o shader da Terra e atualiza seu uniform de offset
-    earth_shader.UseProgram()
-    earth_shader.SetUniform("u_texture_offset", texture_offset)
-    glUseProgram(0) # Desativa o shader para não interferir com outros
-
-    # Desenha a cena
-    if scene and state:
-        for e in scene.engines:
-            e.Update(current_time)
-        scene.Render(state.camera)
         
 def update_and_draw():
     global last_time, earth_shader
