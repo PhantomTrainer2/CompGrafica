@@ -17,6 +17,8 @@ from luxor.disk import Disk
 from luxor.animation import SolarSystemAnimation
 
 # Variáveis globais
+earth_disk = None
+
 scene = None
 state = None
 last_time = 0.0
@@ -136,20 +138,19 @@ def init_app():
     state = State(camera)
         
 def update_and_draw():
-    global last_time, earth_shader
+    global last_time, scene, state, earth_disk
     current_time = glfw.get_time()
     last_time = current_time
-    
+
     glClearColor(0.0, 0.0, 0.1, 1.0)
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
     # --- ATUALIZAÇÃO DO DESLOCAMENTO DA TEXTURA DA TERRA ---
-    earth_texture_rotation_speed = -0.05
+    earth_texture_rotation_speed = -0.05  # controla velocidade
     texture_offset = current_time * earth_texture_rotation_speed
 
-    earth_shader.UseProgram()
-    earth_shader.SetUniform("u_texture_offset", texture_offset)
-    glUseProgram(0)
+    if earth_disk is not None:
+        earth_disk.update_texcoords(texture_offset)
 
     # --- DESENHO DA CENA ---
     if scene and state:
