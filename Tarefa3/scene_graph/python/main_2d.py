@@ -36,7 +36,8 @@ def init_app():
     earth_image_path = os.path.join(images_path, "earthfull.jpg")
     moon_image_path = os.path.join(images_path, "moon.jpeg")
     venus_image_path = os.path.join(images_path, "venus.jpg")
-    
+    space_image_path = os.path.join(images_path, "space.jpg")  # <-- NOVO
+
     # --- ARQUIVOS DE SHADER ---
     vertex_shader_file = os.path.join(ilum_vert_path, 'vertex_texture.glsl')
     fragment_shader_file = os.path.join(ilum_vert_path, 'fragment_texture.glsl')
@@ -96,6 +97,7 @@ def init_app():
     earth_texture = Texture("decal", earth_image_path)
     moon_texture = Texture("decal", moon_image_path)
     venus_texture = Texture("decal", venus_image_path)
+    space_texture = Texture("decal", space_image_path)  # <-- NOVO
     
     # Criar discos separados
     disk_shape = Disk(segments=100)
@@ -103,6 +105,15 @@ def init_app():
 
     # --- CONSTRUÇÃO DA CENA ---
     root_node = Node()
+
+    # --- FUNDO (space.jpg) ---
+    background_disk = Disk(segments=4)
+    background_scale = Transform(); background_scale.Scale(50.0, 50.0, 1.0)
+    background_translate = Transform(); background_translate.Translate(0.0, 0.0, -0.1)  # manda para trás
+    background_node = Node(shader=static_planet_shader, trf=background_translate, apps=[space_texture], shps=[background_disk])
+    background_scale_node = Node(trf=background_scale, nodes=[background_node])
+    root_node.AddNode(background_scale_node)  # <-- ADICIONADO PRIMEIRO
+
     sun_scale = Transform(); sun_scale.Scale(3.0, 3.0, 3.0); sun_spin = Transform() 
     earth_orbit = Transform(); earth_translate = Transform(); earth_translate.Translate(6.0, 0, 0); earth_scale = Transform(); earth_scale.Scale(1.5, 1.5, 1.5); earth_spin = Transform() 
     venus_orbit = Transform(); venus_translate = Transform(); venus_translate.Translate(3.5, 0, 0); venus_scale = Transform(); venus_scale.Scale(0.5, 0.5, 0.5); venus_spin = Transform() 
