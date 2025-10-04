@@ -108,7 +108,7 @@ def init_app():
 
     # --- FUNDO (space.jpg) ---
     background_disk = Disk(segments=4)
-    background_scale = Transform(); background_scale.Scale(50.0, 50.0, 1.0)
+    background_scale = Transform(); background_scale.Scale(72.80, 41.00, 1.0)
     background_translate = Transform(); background_translate.Translate(0.0, 0.0, -0.1)  # manda para trás
     background_node = Node(shader=static_planet_shader, trf=background_translate, apps=[space_texture], shps=[background_disk])
     background_scale_node = Node(trf=background_scale, nodes=[background_node])
