@@ -1,3 +1,8 @@
+"""
+INF1761 - Tarefa 2.1: Criação de cena 3D simples
+Cena com cubos e esferas usando iluminação por fragmento e arcball
+"""
+
 import sys
 from OpenGL.GL import *
 from OpenGL.GLUT import *
@@ -28,7 +33,7 @@ def create_materials():
     materials = {}
     
     # Material vermelho
-    mat_red = Material()
+    mat_red = Material(0.8, 0.1, 0.1)
     mat_red.SetAmbient(0.3, 0.0, 0.0, 1.0)
     mat_red.SetDiffuse(0.8, 0.1, 0.1, 1.0)
     mat_red.SetSpecular(1.0, 1.0, 1.0, 1.0)
@@ -36,7 +41,7 @@ def create_materials():
     materials['red'] = mat_red
     
     # Material verde
-    mat_green = Material()
+    mat_green = Material(0.1, 0.8, 0.1)
     mat_green.SetAmbient(0.0, 0.3, 0.0, 1.0)
     mat_green.SetDiffuse(0.1, 0.8, 0.1, 1.0)
     mat_green.SetSpecular(1.0, 1.0, 1.0, 1.0)
@@ -44,7 +49,7 @@ def create_materials():
     materials['green'] = mat_green
     
     # Material azul
-    mat_blue = Material()
+    mat_blue = Material(0.1, 0.1, 0.8)
     mat_blue.SetAmbient(0.0, 0.0, 0.3, 1.0)
     mat_blue.SetDiffuse(0.1, 0.1, 0.8, 1.0)
     mat_blue.SetSpecular(1.0, 1.0, 1.0, 1.0)
@@ -52,7 +57,7 @@ def create_materials():
     materials['blue'] = mat_blue
     
     # Material amarelo
-    mat_yellow = Material()
+    mat_yellow = Material(0.9, 0.9, 0.1)
     mat_yellow.SetAmbient(0.3, 0.3, 0.0, 1.0)
     mat_yellow.SetDiffuse(0.9, 0.9, 0.1, 1.0)
     mat_yellow.SetSpecular(1.0, 1.0, 1.0, 1.0)
@@ -60,7 +65,7 @@ def create_materials():
     materials['yellow'] = mat_yellow
     
     # Material ciano
-    mat_cyan = Material()
+    mat_cyan = Material(0.1, 0.8, 0.8)
     mat_cyan.SetAmbient(0.0, 0.3, 0.3, 1.0)
     mat_cyan.SetDiffuse(0.1, 0.8, 0.8, 1.0)
     mat_cyan.SetSpecular(1.0, 1.0, 1.0, 1.0)
@@ -68,7 +73,7 @@ def create_materials():
     materials['cyan'] = mat_cyan
     
     # Material magenta
-    mat_magenta = Material()
+    mat_magenta = Material(0.8, 0.1, 0.8)
     mat_magenta.SetAmbient(0.3, 0.0, 0.3, 1.0)
     mat_magenta.SetDiffuse(0.8, 0.1, 0.8, 1.0)
     mat_magenta.SetSpecular(1.0, 1.0, 1.0, 1.0)
@@ -204,9 +209,9 @@ def init():
     
     # Configura a luz
     light = EyeLight(5, 5, 5, 1)  # Luz pontual
-    light.SetAmbient(0.2, 0.2, 0.2, 1.0)
-    light.SetDiffuse(0.8, 0.8, 0.8, 1.0)
-    light.SetSpecular(1.0, 1.0, 1.0, 1.0)
+    light.SetAmbient(0.2, 0.2, 0.2)  # CORRIGIDO: só 3 parâmetros (r, g, b)
+    light.SetDiffuse(0.8, 0.8, 0.8)   # CORRIGIDO: só 3 parâmetros (r, g, b)
+    light.SetSpecular(1.0, 1.0, 1.0)  # CORRIGIDO: só 3 parâmetros (r, g, b)
     
     # Cria os shaders para iluminação por fragmento
     shader = Shader('shaders/ilum_vert/vertex.glsl', 
