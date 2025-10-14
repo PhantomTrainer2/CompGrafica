@@ -27,7 +27,7 @@ def main():
     glfw.window_hint(glfw.CONTEXT_VERSION_MINOR,1)
     glfw.window_hint(glfw.OPENGL_PROFILE, glfw.OPENGL_CORE_PROFILE)
     glfw.window_hint(glfw.OPENGL_FORWARD_COMPAT,GL_TRUE)
-    win = glfw.create_window(640, 480, "Hello World", None, None)
+    win = glfw.create_window(640, 480, "Tarefa 2.1", None, None)
     if not win:
         glfw.terminate()
         return
@@ -69,8 +69,8 @@ def initialize (win):
   light = Light(5.0,5.0,5.0)
 
   # Materials
-  brown_material = Material(0.5, 0.25, 0.0)
-  box_material = Material(0.2, 0.5, 1.0) # Blue box
+  table_material = Material(0.5, 0.25, 0.0)
+  box_material = Material(1, 0.5, 0)
   green_material = Material(0.0, 1.0, 0.0)
   red_material = Material(1.0, 0.0, 0.0)
 
@@ -87,16 +87,16 @@ def initialize (win):
   # Box - Relative to table
   box_trf = Transform()
   # World scale 0.8 -> local scale 0.8/3.0, 0.8/0.2, 0.8/2.0
-  box_trf.Scale(0.8/3.0, 0.8/0.2, 0.8/2.0)
+  box_trf.Scale(0.8/3.0, 0.4/0.2, 0.8/2.0)
   # Move up by half table height + half box height (in parent's scaled space)
   # (0.2/2 + 0.8/2) / 0.2 (table y-scale) = 2.5
-  box_trf.Translate(0.0, 2.5, 0.0)
+  box_trf.Translate(0.0, 0.5, 0.0)
 
   # Green Sphere - Relative to box
   green_sphere_trf = Transform()
-  green_sphere_trf.Scale(0.3/0.8, 0.3/0.8, 0.3/0.8)
+  green_sphere_trf.Scale(0.2, 0.4, 0.2)
   # (0.8/2 + 0.3/2) / 0.8 (box y-scale) = 0.6875
-  green_sphere_trf.Translate(0.0, 0.6875, 0.0)
+  green_sphere_trf.Translate(0.0, 3.5, 0.0)
 
   # Red Sphere - Relative to table
   red_sphere_trf = Transform()
@@ -104,7 +104,7 @@ def initialize (win):
   # Y: (0.2/2 + 0.6/2) / 0.2 = 2.0
   # X: 1.0 / 3.0 (table x-scale)
   # Z: 0.5 / 2.0 (table z-scale)
-  red_sphere_trf.Translate(1.0/3.0, 2.0, 0.5/2.0)
+  red_sphere_trf.Translate(2.0, 1.2, -1)
 
   # --- Path independent shader loading ---
   # Get the absolute path to the directory containing this script
@@ -123,7 +123,7 @@ def initialize (win):
   root = Node(shader,
               nodes = [
                   # Table Node is the parent
-                  Node(None, table_trf, [brown_material], [cube],
+                  Node(None, table_trf, [table_material], [cube],
                        nodes = [
                            # Box Node is a child of the table
                            Node(None, box_trf, [box_material], [cube],
