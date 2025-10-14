@@ -2,6 +2,7 @@ import glfw
 from OpenGL.GL import *
 from OpenGL.GL.shaders import *
 from PIL import Image, ImageOps
+import os
 
 import glm
 from camera3d import *
@@ -105,10 +106,17 @@ def initialize (win):
   # Z: 0.5 / 2.0 (table z-scale)
   red_sphere_trf.Translate(1.0/3.0, 2.0, 0.5/2.0)
 
+  # --- Path independent shader loading ---
+  # Get the absolute path to the directory containing this script
+  script_dir = os.path.dirname(os.path.abspath(__file__))
+  # Build absolute paths to the shaders
+  vert_shader_path = os.path.join(script_dir, "..", "shaders", "ilum_vert", "vertex.glsl")
+  frag_shader_path = os.path.join(script_dir, "..", "shaders", "ilum_vert", "fragment.glsl")
+
   # Shader
   shader = Shader(light,"world")
-  shader.AttachVertexShader("../shaders/ilum_vert/vertex.glsl")
-  shader.AttachFragmentShader("../shaders/ilum_vert/fragment.glsl")
+  shader.AttachVertexShader(vert_shader_path)
+  shader.AttachFragmentShader(frag_shader_path)
   shader.Link()
 
   # Scene Graph (Hierarchical)
