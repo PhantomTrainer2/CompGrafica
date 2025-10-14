@@ -3,7 +3,8 @@ import glm
 
 class EyeLight(Light):
     def __init__ (self, x, y, z, w=1):
-      Light.__init__(self, x, y, z, w)
+      Light.__init__(self)
+      self.pos = glm.vec4(x,y,z,w)
 
     def SetPosition (self, x, y, z, w):
       self.pos[0] = x

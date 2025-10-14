@@ -1,256 +1,124 @@
-"""
-INF1761 - Tarefa 2.1: Criação de cena 3D simples
-Cena com cubos e esferas usando iluminação por fragmento e arcball
-"""
-
-import sys
+import glfw
 from OpenGL.GL import *
-from OpenGL.GLUT import *
+from OpenGL.GL.shaders import *
+from PIL import Image, ImageOps
+
 import glm
-
-# Importa as classes do grafo de cena
-from camera3d import Camera3D
-from eyelight import EyeLight
-from scene import Scene
-from node import Node
-from cube import Cube
-from sphere import Sphere
-from material import Material
-from appearance import Appearance
-from shader import Shader
-
-# Variáveis globais
-camera = None
-arcball = None
-light = None
-scene = None
-mouse_button = None
-mouse_x = 0
-mouse_y = 0
-
-def create_materials():
-    """Cria diferentes materiais para os objetos"""
-    materials = {}
-    
-    # Material vermelho
-    mat_red = Material(0.8, 0.1, 0.1)
-    mat_red.SetAmbient(0.3, 0.0, 0.0, 1.0)
-    mat_red.SetDiffuse(0.8, 0.1, 0.1, 1.0)
-    mat_red.SetSpecular(1.0, 1.0, 1.0, 1.0)
-    mat_red.SetShininess(32.0)
-    materials['red'] = mat_red
-    
-    # Material verde
-    mat_green = Material(0.1, 0.8, 0.1)
-    mat_green.SetAmbient(0.0, 0.3, 0.0, 1.0)
-    mat_green.SetDiffuse(0.1, 0.8, 0.1, 1.0)
-    mat_green.SetSpecular(1.0, 1.0, 1.0, 1.0)
-    mat_green.SetShininess(32.0)
-    materials['green'] = mat_green
-    
-    # Material azul
-    mat_blue = Material(0.1, 0.1, 0.8)
-    mat_blue.SetAmbient(0.0, 0.0, 0.3, 1.0)
-    mat_blue.SetDiffuse(0.1, 0.1, 0.8, 1.0)
-    mat_blue.SetSpecular(1.0, 1.0, 1.0, 1.0)
-    mat_blue.SetShininess(32.0)
-    materials['blue'] = mat_blue
-    
-    # Material amarelo
-    mat_yellow = Material(0.9, 0.9, 0.1)
-    mat_yellow.SetAmbient(0.3, 0.3, 0.0, 1.0)
-    mat_yellow.SetDiffuse(0.9, 0.9, 0.1, 1.0)
-    mat_yellow.SetSpecular(1.0, 1.0, 1.0, 1.0)
-    mat_yellow.SetShininess(64.0)
-    materials['yellow'] = mat_yellow
-    
-    # Material ciano
-    mat_cyan = Material(0.1, 0.8, 0.8)
-    mat_cyan.SetAmbient(0.0, 0.3, 0.3, 1.0)
-    mat_cyan.SetDiffuse(0.1, 0.8, 0.8, 1.0)
-    mat_cyan.SetSpecular(1.0, 1.0, 1.0, 1.0)
-    mat_cyan.SetShininess(64.0)
-    materials['cyan'] = mat_cyan
-    
-    # Material magenta
-    mat_magenta = Material(0.8, 0.1, 0.8)
-    mat_magenta.SetAmbient(0.3, 0.0, 0.3, 1.0)
-    mat_magenta.SetDiffuse(0.8, 0.1, 0.8, 1.0)
-    mat_magenta.SetSpecular(1.0, 1.0, 1.0, 1.0)
-    mat_magenta.SetShininess(64.0)
-    materials['magenta'] = mat_magenta
-    
-    return materials
-
-def create_scene_objects(materials, shader):
-    """Cria a cena com cubos e esferas"""
-    global scene
-    scene = Scene()
-    
-    # Esfera central grande (amarela)
-    sphere_center = Node()
-    sphere_center.SetScale(2, 2, 2)
-    sphere_center.SetShape(Sphere())
-    sphere_center.SetAppearance(Appearance(materials['yellow'], shader))
-    scene.Add(sphere_center)
-    
-    # Cubos ao redor (4 cubos)
-    cube_positions = [
-        (-4, 2, 0, 'red'),      # Esquerda superior
-        (4, 2, 0, 'green'),     # Direita superior
-        (-4, -2, 0, 'blue'),    # Esquerda inferior
-        (4, -2, 0, 'cyan'),     # Direita inferior
-    ]
-    
-    for pos_x, pos_y, pos_z, color in cube_positions:
-        cube = Node()
-        cube.SetPosition(pos_x, pos_y, pos_z)
-        cube.SetScale(1.5, 1.5, 1.5)
-        cube.SetShape(Cube())
-        cube.SetAppearance(Appearance(materials[color], shader))
-        scene.Add(cube)
-    
-    # Esferas menores (4 esferas)
-    sphere_positions = [
-        (0, 4, 2, 'magenta'),
-        (0, -4, 2, 'cyan'),
-        (-6, 0, -2, 'green'),
-        (6, 0, -2, 'red'),
-    ]
-    
-    for pos_x, pos_y, pos_z, color in sphere_positions:
-        sphere = Node()
-        sphere.SetPosition(pos_x, pos_y, pos_z)
-        sphere.SetScale(1.2, 1.2, 1.2)
-        sphere.SetShape(Sphere())
-        sphere.SetAppearance(Appearance(materials[color], shader))
-        scene.Add(sphere)
-    
-    # Cubo no fundo
-    cube_back = Node()
-    cube_back.SetPosition(0, 0, -5)
-    cube_back.SetScale(2, 2, 2)
-    cube_back.SetShape(Cube())
-    cube_back.SetAppearance(Appearance(materials['blue'], shader))
-    scene.Add(cube_back)
-
-def display():
-    """Função de renderização"""
-    global camera, light, scene
-    
-    # Limpa buffers
-    glClearColor(0.1, 0.1, 0.15, 1.0)
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-    
-    # Desenha a cena
-    scene.Draw(camera, light)
-    
-    # Troca buffers
-    glutSwapBuffers()
-
-def reshape(width, height):
-    """Callback de redimensionamento"""
-    glViewport(0, 0, width, height)
-    glutPostRedisplay()
-
-def mouse(button, state, x, y):
-    """Callback de mouse"""
-    global mouse_button, mouse_x, mouse_y, arcball
-    
-    mouse_button = button
-    mouse_x = x
-    mouse_y = y
-    
-    if button == GLUT_LEFT_BUTTON:
-        if state == GLUT_DOWN:
-            arcball.StartDrag(x, y)
-        else:
-            arcball.EndDrag()
-            
-    glutPostRedisplay()
-
-def motion(x, y):
-    """Callback de movimento do mouse"""
-    global mouse_button, mouse_x, mouse_y, arcball
-    
-    if mouse_button == GLUT_LEFT_BUTTON:
-        arcball.Drag(x, y)
-        glutPostRedisplay()
-        
-    mouse_x = x
-    mouse_y = y
-
-def keyboard(key, x, y):
-    """Callback de teclado"""
-    global arcball
-    
-    if key == b'\x1b':  # ESC
-        sys.exit(0)
-    elif key == b'r' or key == b'R':
-        # Reset da câmera
-        arcball.Reset()
-        glutPostRedisplay()
-
-def init():
-    """Inicialização"""
-    global camera, arcball, light
-    
-    # Habilita depth test
-    glEnable(GL_DEPTH_TEST)
-    
-    # Configura a câmera
-    camera = Camera3D(0, 0, 15)
-    camera.SetCenter(0, 0, 0)
-    camera.SetAngle(45)
-    camera.SetZPlanes(0.1, 1000)
-    
-    # Cria arcball
-    arcball = camera.CreateArcball()
-    
-    # Configura a luz
-    light = EyeLight(5, 5, 5, 1)  # Luz pontual
-    light.SetAmbient(0.2, 0.2, 0.2)  # CORRIGIDO: só 3 parâmetros (r, g, b)
-    light.SetDiffuse(0.8, 0.8, 0.8)   # CORRIGIDO: só 3 parâmetros (r, g, b)
-    light.SetSpecular(1.0, 1.0, 1.0)  # CORRIGIDO: só 3 parâmetros (r, g, b)
-    
-    # Cria os shaders para iluminação por fragmento
-    shader = Shader('shaders/ilum_vert/vertex.glsl', 
-                    'shaders/ilum_vert/fragment.glsl')
-    
-    # Cria os materiais e objetos da cena
-    materials = create_materials()
-    create_scene_objects(materials, shader)
+from camera3d import *
+from light import *
+from shader import *
+from material import *
+from transform import *
+from node import *
+from scene import *
+from cube import * 
+from sphere import * 
+from texture import * 
+from polyoffset import * 
+from quad import *
 
 def main():
-    """Função principal"""
-    # Inicializa GLUT
-    glutInit(sys.argv)
-    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH)
-    glutInitWindowSize(800, 600)
-    glutCreateWindow(b"Tarefa 2.1 - Cena 3D com Iluminacao por Fragmento")
-    
-    # Inicializa a cena
-    init()
-    
-    # Configura callbacks
-    glutDisplayFunc(display)
-    glutReshapeFunc(reshape)
-    glutMouseFunc(mouse)
-    glutMotionFunc(motion)
-    glutKeyboardFunc(keyboard)
-    
-    # Mensagem de instruções
-    print("=" * 50)
-    print("Tarefa 2.1 - Cena 3D com Iluminacao por Fragmento")
-    print("=" * 50)
-    print("Controles:")
-    print("  - Arraste com o botao esquerdo: Rotacionar camera (arcball)")
-    print("  - Tecla 'R': Resetar camera")
-    print("  - Tecla 'ESC': Sair")
-    print("=" * 50)
-    
-    # Loop principal
-    glutMainLoop()
+    # Initialize the library
+    if not glfw.init():
+        return
+    # Create a windowed mode window and its OpenGL context
+    glfw.window_hint(glfw.CONTEXT_VERSION_MAJOR,4)
+    glfw.window_hint(glfw.CONTEXT_VERSION_MINOR,1)
+    glfw.window_hint(glfw.OPENGL_PROFILE, glfw.OPENGL_CORE_PROFILE)
+    glfw.window_hint(glfw.OPENGL_FORWARD_COMPAT,GL_TRUE)
+    win = glfw.create_window(640, 480, "Hello World", None, None)
+    if not win:
+        glfw.terminate()
+        return
+    glfw.set_key_callback(win,keyboard)
+
+    # Make the window's context current
+    glfw.make_context_current(win)
+    print("OpenGL version: ",glGetString(GL_VERSION))
+
+    initialize(win)
+
+    # Loop until the user closes the window
+    while not glfw.window_should_close(win):
+        # Render here, e.g. using pyOpenGL
+        display(win)
+
+        # Swap front and back buffers
+        glfw.swap_buffers(win)
+
+        # Poll for and process events
+        glfw.poll_events()
+
+viewer_pos = glm.vec3(2.0, 3.5, 4.0)
+
+def initialize (win):
+  # set background color: white 
+  glClearColor(1.0,1.0,1.0,1.0)
+  # enable depth test 
+  glEnable(GL_DEPTH_TEST)
+  # cull back faces
+  glEnable(GL_CULL_FACE)  
+
+  # create objects
+  global camera
+  camera = Camera3D(viewer_pos[0],viewer_pos[1],viewer_pos[2])
+  #camera.SetOrtho(true)
+  arcball = camera.CreateArcball()
+  arcball.Attach(win)
+
+  # light = Light(viewer_pos[0],viewer_pos[1],viewer_pos[2])
+  light = Light(0.0,0.0,0.0,1.0,"camera")
+
+  white = Material(1.0,1.0,1.0)
+  red = Material(1.0,0.5,0.5)
+  poff = PolygonOffset(-1,-1)
+  paper = Texture("decal","../../images/paper.jpg")
+
+  trf1 = Transform()
+  trf1.Scale(3.0,0.3,3.0)
+  trf1.Translate(0.0,-1.0,0.0)
+  trf2 = Transform()
+  trf2.Scale(0.5,0.5,0.5)
+  trf2.Translate(0.0,1.0,0.0)
+  trf3 = Transform()
+  trf3.Translate(0.8,0.0,0.8)
+  trf3.Rotate(30.0,0.0,1.0,0.0)
+  trf3.Rotate(90.0,-1.0,0.0,0.0)
+  trf3.Scale(0.5,0.7,1.0);
+
+  cube = Cube() 
+  quad = Quad() 
+  sphere = Sphere()
+
+  shader = Shader(light,"world")
+  shader.AttachVertexShader("../../shaders/ilum_frag/vertex.glsl")
+  shader.AttachFragmentShader("../../shaders/ilum_frag/fragment.glsl")
+  shader.Link()
+
+  shd_tex = Shader(light,"world")
+  shd_tex.AttachVertexShader("../../shaders/texture/vertex.glsl")
+  shd_tex.AttachFragmentShader("../../shaders/texture/fragment.glsl")
+  shd_tex.Link()
+  # build scene
+  root = Node(shader,
+              nodes = [
+                        Node(None,trf1,[red],[cube]),
+                        Node(shd_tex,trf3,[white,poff,paper],{quad}),
+                        Node(None,trf2,[white],[sphere])
+                      ]
+              )
+  global scene 
+  scene = Scene(root)
+
+def display (win):
+  global scene
+  global camera
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT) 
+  scene.Render(camera)
+
+def keyboard (win, key, scancode, action, mods):
+   if key == glfw.KEY_Q and action == glfw.PRESS:
+      glfw.set_window_should_close(win,glfw.TRUE)
 
 if __name__ == "__main__":
     main()
