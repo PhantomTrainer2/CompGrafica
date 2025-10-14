@@ -86,7 +86,6 @@ def create_scene_objects(materials, shader):
     """Cria a cena com cubos e esferas"""
     global scene
     scene = Scene()
-    nodes = []
     
     # Esfera central grande (amarela)
     sphere_center = Node()
@@ -110,7 +109,6 @@ def create_scene_objects(materials, shader):
         cube.SetShape(Cube())
         cube.SetAppearance(Appearance(materials[color], shader))
         scene.Add(cube)
-        nodes.append(cube)
     
     # Esferas menores (4 esferas)
     sphere_positions = [
@@ -127,7 +125,6 @@ def create_scene_objects(materials, shader):
         sphere.SetShape(Sphere())
         sphere.SetAppearance(Appearance(materials[color], shader))
         scene.Add(sphere)
-        nodes.append(sphere)
     
     # Cubo no fundo
     cube_back = Node()
@@ -136,19 +133,6 @@ def create_scene_objects(materials, shader):
     cube_back.SetShape(Cube())
     cube_back.SetAppearance(Appearance(materials['blue'], shader))
     scene.Add(cube_back)
-    cube_back.SetAppearance(Appearance(materials['blue'], shader))    
-    nodes.append(cube_back)
-
-    # Esfera central grande (amarela)
-    sphere_center = Node()
-    sphere_center.SetScale(2, 2, 2)
-    sphere_center.SetShape(Sphere())
-    sphere_center.SetAppearance(Appearance(materials['yellow'], shader))
-    nodes.append(sphere_center)
-
-    root_node = Node(nodes=nodes)
-    global scene
-    scene = Scene(root_node)
 
 def display():
     """Função de renderização"""
@@ -232,9 +216,6 @@ def init():
     # Cria os shaders para iluminação por fragmento
     shader = Shader('shaders/ilum_vert/vertex.glsl', 
                     'shaders/ilum_vert/fragment.glsl')
-    shader = Shader('../shaders/ilum_vert/vertex.glsl', 
-                    '../shaders/ilum_vert/fragment.glsl',
-                    light)
     
     # Cria os materiais e objetos da cena
     materials = create_materials()
