@@ -1,0 +1,13 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python: Tarefa 4",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/Tarefa4/python/main_3d.py",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}/Tarefa4/python"
+        }
+    ]
+}

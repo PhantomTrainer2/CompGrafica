@@ -62,51 +62,71 @@ def initialize (win):
   # create objects
   global camera
   camera = Camera3D(viewer_pos[0],viewer_pos[1],viewer_pos[2])
-  #camera.SetOrtho(true)
   arcball = camera.CreateArcball()
   arcball.Attach(win)
 
-  # light = Light(viewer_pos[0],viewer_pos[1],viewer_pos[2])
-  light = Light(0.0,0.0,0.0,1.0,"camera")
+  light = Light(5.0,5.0,5.0)
 
-  white = Material(1.0,1.0,1.0)
-  red = Material(1.0,0.5,0.5)
-  poff = PolygonOffset(-1,-1)
-  paper = Texture("decal","../../images/paper.jpg")
+  # Materials
+  brown_material = Material(0.5, 0.25, 0.0)
+  box_material = Material(0.2, 0.5, 1.0) # Blue box
+  green_material = Material(0.0, 1.0, 0.0)
+  red_material = Material(1.0, 0.0, 0.0)
 
-  trf1 = Transform()
-  trf1.Scale(3.0,0.3,3.0)
-  trf1.Translate(0.0,-1.0,0.0)
-  trf2 = Transform()
-  trf2.Scale(0.5,0.5,0.5)
-  trf2.Translate(0.0,1.0,0.0)
-  trf3 = Transform()
-  trf3.Translate(0.8,0.0,0.8)
-  trf3.Rotate(30.0,0.0,1.0,0.0)
-  trf3.Rotate(90.0,-1.0,0.0,0.0)
-  trf3.Scale(0.5,0.7,1.0);
-
+  # Geometries
   cube = Cube() 
-  quad = Quad() 
   sphere = Sphere()
 
+  # Transformations (hierarchical)
+  # Table - This is the base, centered at y=-0.5
+  table_trf = Transform()
+  table_trf.Scale(3.0, 0.2, 2.0)
+  table_trf.Translate(0.0, -2.5, 0.0) # y=-0.5 world -> -0.5/0.2 scale = -2.5 local
+
+  # Box - Relative to table
+  box_trf = Transform()
+  # World scale 0.8 -> local scale 0.8/3.0, 0.8/0.2, 0.8/2.0
+  box_trf.Scale(0.8/3.0, 0.8/0.2, 0.8/2.0)
+  # Move up by half table height + half box height (in parent's scaled space)
+  # (0.2/2 + 0.8/2) / 0.2 (table y-scale) = 2.5
+  box_trf.Translate(0.0, 2.5, 0.0)
+
+  # Green Sphere - Relative to box
+  green_sphere_trf = Transform()
+  green_sphere_trf.Scale(0.3/0.8, 0.3/0.8, 0.3/0.8)
+  # (0.8/2 + 0.3/2) / 0.8 (box y-scale) = 0.6875
+  green_sphere_trf.Translate(0.0, 0.6875, 0.0)
+
+  # Red Sphere - Relative to table
+  red_sphere_trf = Transform()
+  red_sphere_trf.Scale(0.6/3.0, 0.6/0.2, 0.6/2.0)
+  # Y: (0.2/2 + 0.6/2) / 0.2 = 2.0
+  # X: 1.0 / 3.0 (table x-scale)
+  # Z: 0.5 / 2.0 (table z-scale)
+  red_sphere_trf.Translate(1.0/3.0, 2.0, 0.5/2.0)
+
+  # Shader
   shader = Shader(light,"world")
-  shader.AttachVertexShader("../../shaders/ilum_frag/vertex.glsl")
-  shader.AttachFragmentShader("../../shaders/ilum_frag/fragment.glsl")
+  shader.AttachVertexShader("../shaders/ilum_vert/vertex.glsl")
+  shader.AttachFragmentShader("../shaders/ilum_vert/fragment.glsl")
   shader.Link()
 
-  shd_tex = Shader(light,"world")
-  shd_tex.AttachVertexShader("../../shaders/texture/vertex.glsl")
-  shd_tex.AttachFragmentShader("../../shaders/texture/fragment.glsl")
-  shd_tex.Link()
-  # build scene
+  # Scene Graph (Hierarchical)
   root = Node(shader,
               nodes = [
-                        Node(None,trf1,[red],[cube]),
-                        Node(shd_tex,trf3,[white,poff,paper],{quad}),
-                        Node(None,trf2,[white],[sphere])
-                      ]
-              )
+                  # Table Node is the parent
+                  Node(None, table_trf, [brown_material], [cube],
+                       nodes = [
+                           # Box Node is a child of the table
+                           Node(None, box_trf, [box_material], [cube],
+                                nodes = [
+                                    # Green Sphere is a child of the box
+                                    Node(None, green_sphere_trf, [green_material], [sphere])
+                                ]),
+                           # Red Sphere is also a child of the table
+                           Node(None, red_sphere_trf, [red_material], [sphere])
+                       ])
+              ])
   global scene 
   scene = Scene(root)
 
