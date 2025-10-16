@@ -7,33 +7,13 @@ uniform mat4 Mv;
 uniform mat4 Mn; 
 uniform mat4 Mvp;
 
-uniform vec4 lpos;  // light pos in eye space
-uniform vec4 lamb;
-uniform vec4 ldif;
-uniform vec4 lspe;
-
-uniform vec4 mamb;
-uniform vec4 mdif;
-uniform vec4 mspe;
-uniform float mshi;
-
-out vec4 color;
+out vec3 veye;
+out vec3 neye;
 
 void main (void) 
 {
-  vec3 veye = vec3(Mv*coord);
-  vec3 light;
-  if (lpos.w == 0) 
-    light = normalize(vec3(lpos));
-  else 
-    light = normalize(vec3(lpos)-veye); 
-  vec3 neye = normalize(vec3(Mn*vec4(normal,0.0f)));
-  float ndotl = dot(neye,light);
-  color = mamb*lamb + mdif * ldif * max(0,ndotl); 
-  if (ndotl > 0) {
-    vec3 refl = normalize(reflect(-light,neye));
-    color += mspe * lspe * pow(max(0,dot(refl,normalize(-veye))),mshi); 
-  }
+  veye = vec3(Mv * coord);
+  // Pass unnormalized normal; normalize per-fragment for better accuracy
+  neye = vec3(Mn * vec4(normal, 0.0f));
   gl_Position = Mvp*coord; 
 }
-

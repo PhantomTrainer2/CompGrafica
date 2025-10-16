@@ -54,7 +54,7 @@ viewer_pos = glm.vec3(2.0, 3.5, 4.0)
 
 def initialize (win):
   # set background color: white 
-  glClearColor(1.0,1.0,1.0,1.0)
+  glClearColor(0.5,0.5,0.5,1.0)
   # enable depth test 
   glEnable(GL_DEPTH_TEST)
   # cull back faces
@@ -114,7 +114,7 @@ def initialize (win):
   frag_shader_path = os.path.join(script_dir, "..", "shaders", "ilum_vert", "fragment.glsl")
 
   # Shader
-  shader = Shader(light,"world")
+  shader = Shader(light,"camera")
   shader.AttachVertexShader(vert_shader_path)
   shader.AttachFragmentShader(frag_shader_path)
   shader.Link()
