@@ -139,19 +139,19 @@ def initialize (win):
 
   # moon
   global moon_leaf
-  moon_leaf = Node(shader=sh_tex, trf=moon_scale, apps=[moon_mat, tex_moon, Variable("useNormalMap", 0)], shps=[sphere])
+  moon_leaf = Node(shader=sh_tex, trf=moon_scale, apps=[moon_mat, tex_moon, Variable("useNormalMap", 0), Variable("debugNormals", 0)], shps=[sphere])
   moon_tr_node = Node(trf=moon_translate, nodes=[moon_leaf])
   moon_orbit_node = Node(trf=moon_orbit, nodes=[moon_tr_node])
 
   # earth (with normal map)
   global earth_leaf
-  earth_leaf = Node(shader=sh_tex, trf=earth_spin, apps=[earth_mat, tex_earth, tex_earth_normal, Variable("useNormalMap", 1)], shps=[sphere])
+  earth_leaf = Node(shader=sh_tex, trf=earth_spin, apps=[earth_mat, tex_earth, tex_earth_normal, Variable("useNormalMap", 1), Variable("debugNormals", 0)], shps=[sphere])
   earth_scale_node = Node(trf=earth_scale, nodes=[earth_leaf])
   earth_tr_node = Node(trf=earth_translate, nodes=[earth_scale_node, moon_orbit_node])
   earth_orbit_node = Node(trf=earth_orbit, nodes=[earth_tr_node])
 
   # venus/mercury
-  venus_leaf = Node(shader=sh_tex, trf=venus_spin, apps=[venus_mat, tex_venus, Variable("useNormalMap", 0)], shps=[sphere])
+  venus_leaf = Node(shader=sh_tex, trf=venus_spin, apps=[venus_mat, tex_venus, Variable("useNormalMap", 0), Variable("debugNormals", 0)], shps=[sphere])
   venus_scale_node = Node(trf=venus_scale, nodes=[venus_leaf])
   venus_tr_node = Node(trf=venus_translate, nodes=[venus_scale_node])
   venus_orbit_node = Node(trf=venus_orbit, nodes=[venus_tr_node])
@@ -238,23 +238,61 @@ def display (win):
   global camera
   global camera_follow
   global active_camera
+  global paused
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT) 
   # advance animation engines
   current_time = glfw.get_time()
-  for e in scene.engines:
-    e.Update(current_time)
+  if not paused:
+    for e in scene.engines:
+      e.Update(current_time)
   # render
   scene.Render(active_camera)
 
 def keyboard (win, key, scancode, action, mods):
    global active_camera
+   global earth_leaf, moon_leaf, venus_leaf
+   global paused
    if key == glfw.KEY_Q and action == glfw.PRESS:
       glfw.set_window_should_close(win,glfw.TRUE)
    if key == glfw.KEY_C and action == glfw.PRESS:
       # toggle camera
       active_camera = camera if active_camera is not camera else camera_follow
+   # toggle pause (P)
+   if key == glfw.KEY_P and action == glfw.PRESS:
+      paused = not paused
+   # toggle debug normals (N)
+   if key == glfw.KEY_N and action == glfw.PRESS:
+      try:
+        for node in [earth_leaf, moon_leaf, venus_leaf]:
+          if not node: continue
+          found = False
+          for i, app in enumerate(node.apps):
+            if isinstance(app, Variable) and app.name == "debugNormals":
+              val = 0 if app.value == 1 else 1
+              node.apps[i] = Variable("debugNormals", val)
+              found = True
+              break
+          if not found:
+            node.apps.append(Variable("debugNormals", 1))
+      except Exception:
+        pass
+   # toggle normal map on earth (B)
+   if key == glfw.KEY_B and action == glfw.PRESS:
+      try:
+        found = False
+        for i, app in enumerate(earth_leaf.apps):
+          if isinstance(app, Variable) and app.name == "useNormalMap":
+            val = 0 if app.value == 1 else 1
+            earth_leaf.apps[i] = Variable("useNormalMap", val)
+            found = True
+            break
+        if not found:
+          earth_leaf.apps.append(Variable("useNormalMap", 1))
+      except Exception:
+        pass
 
 active_camera = None
+paused = False
 
 if __name__ == "__main__":
     active_camera = None

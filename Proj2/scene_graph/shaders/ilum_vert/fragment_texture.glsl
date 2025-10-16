@@ -12,6 +12,7 @@ out vec4 color;
 uniform sampler2D decal;
 uniform sampler2D normalMap; // optional
 uniform bool useNormalMap = false;
+uniform int debugNormals = 0;
 
 uniform vec4 lpos;  // light pos in eye space
 uniform vec4 lamb;
@@ -55,6 +56,10 @@ void main (void)
   }
 
   vec4 tex = texture(decal, f.texcoord);
-  color = vec4((lit.rgb * tex.rgb), mopacity * tex.a);
+  vec3 finalRgb = lit.rgb * tex.rgb;
+  if (debugNormals == 1) {
+    finalRgb = n * 0.5 + 0.5; // visualize normal in RGB
+  }
+  color = vec4(finalRgb, mopacity * tex.a);
 }
 
