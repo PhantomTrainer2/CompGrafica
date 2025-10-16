@@ -171,8 +171,8 @@ def initialize (win):
 
   class FollowMoonCameraEngine(Engine):
     def __init__(self):
-      self.prev_side = None
       self.prev_dir = None
+      self.prev_side = None
     def Update(self, time):
       try:
         origin = glm.vec4(0,0,0,1)
@@ -182,19 +182,32 @@ def initialize (win):
         moon_pos = glm.vec3(M_moon * origin)
 
         cam_dir_raw = glm.normalize(moon_pos - earth_pos)
-        # smooth direction to avoid sudden flips
+        # smooth cam direction a bit to avoid jitter
         if self.prev_dir is None:
           cam_dir = cam_dir_raw
         else:
           beta = 0.12
           cam_dir = glm.normalize(self.prev_dir * (1.0 - beta) + cam_dir_raw * beta)
-        self.prev_dir = cam_dir
         world_up = glm.vec3(0.0, 1.0, 0.0)
-        up = world_up  # lock roll to system plane to avoid flips
-        # avoid degeneracy when looking almost straight up/down
-        d = glm.dot(cam_dir, up)
-        if glm.abs(d) > 0.98:
-          cam_dir = glm.normalize(cam_dir + glm.sign(d) * up * 0.05)
+
+        # Parallel-transport previous side to new direction to avoid roll flips
+        if self.prev_side is None:
+          side = glm.cross(world_up, cam_dir)
+          if glm.length(side) < 1e-5:
+            side = glm.cross(glm.vec3(1.0,0.0,0.0), cam_dir)
+          side = glm.normalize(side)
+        else:
+          # project previous side onto plane orthogonal to cam_dir
+          side = self.prev_side - cam_dir * glm.dot(self.prev_side, cam_dir)
+          if glm.length(side) < 1e-5:
+            side = glm.cross(world_up, cam_dir)
+            if glm.length(side) < 1e-5:
+              side = glm.cross(glm.vec3(1.0,0.0,0.0), cam_dir)
+          side = glm.normalize(side)
+        up = glm.normalize(glm.cross(cam_dir, side))
+        # store for next frame
+        self.prev_dir = cam_dir
+        self.prev_side = side
         earth_radius = 1.0
         moon_radius = 0.27
         # keep safe distance from Moon to avoid entering its surface
@@ -212,7 +225,7 @@ def initialize (win):
           cam_eye -= cam_dir * push_back
         camera_follow.SetEye(cam_eye.x, cam_eye.y, cam_eye.z)
         camera_follow.SetCenter(moon_pos.x, moon_pos.y, moon_pos.z)
-        camera_follow.SetUpDir(0,1,0)
+        camera_follow.SetUpDir(up.x, up.y, up.z)
         # fixed FOV to avoid jitter
         camera_follow.SetAngle(90.0)
       except Exception:
