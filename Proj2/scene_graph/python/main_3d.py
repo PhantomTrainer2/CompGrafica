@@ -170,6 +170,8 @@ def initialize (win):
   scene.AddEngine(engine)
 
   class FollowMoonCameraEngine(Engine):
+    def __init__(self):
+      self.prev_side = None
     def Update(self, time):
       try:
         origin = glm.vec4(0,0,0,1)
@@ -179,23 +181,24 @@ def initialize (win):
         moon_pos = glm.vec3(M_moon * origin)
 
         cam_dir = glm.normalize(moon_pos - earth_pos)
-        up = glm.vec3(0.0, 1.0, 0.0)
-        side = glm.normalize(glm.cross(cam_dir, up))
+        world_up = glm.vec3(0.0, 1.0, 0.0)
+        side = glm.cross(world_up, cam_dir)
+        if glm.length(side) < 1e-3:
+          side = glm.cross(glm.vec3(1.0,0.0,0.0), cam_dir)
+        side = glm.normalize(side)
+        if self.prev_side is not None and glm.dot(side, self.prev_side) < 0.0:
+          side = -side
+        self.prev_side = side
+        up = glm.normalize(glm.cross(cam_dir, side))
         earth_radius = 1.0
         moon_radius = 0.27
-        # position camera near Earth's surface with slight lateral/vertical offsets
-        cam_eye = earth_pos + cam_dir * (earth_radius * 1.05) + side * (earth_radius * 0.5) + up * (earth_radius * 0.2)
+        # position camera near Earth's surface (do not move towards Moon)
+        cam_eye = earth_pos + cam_dir * (earth_radius * 1.3) + side * (earth_radius * 0.6) + up * (earth_radius * 0.2)
         camera_follow.SetEye(cam_eye.x, cam_eye.y, cam_eye.z)
         camera_follow.SetCenter(moon_pos.x, moon_pos.y, moon_pos.z)
         camera_follow.SetUpDir(0,1,0)
-        # choose FOV so the moon fits in view with margin
-        dist = glm.length(moon_pos - cam_eye)
-        if dist > 1e-4:
-          import math
-          margin = 2.0  # larger margin -> wider FOV -> Lua menor na tela
-          fov_rad = 2.0 * math.atan((moon_radius * margin) / dist)
-          fov_deg = max(40.0, min(85.0, math.degrees(fov_rad)))
-          camera_follow.SetAngle(fov_deg)
+        # fixed FOV to avoid jitter
+        camera_follow.SetAngle(70.0)
       except Exception:
         pass
 
