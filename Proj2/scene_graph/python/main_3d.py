@@ -137,11 +137,13 @@ def initialize (win):
   sun_scale_node = Node(trf=sun_scale, nodes=[sun_node])
 
   # moon
+  global moon_leaf
   moon_leaf = Node(shader=sh_tex, trf=moon_scale, apps=[moon_mat, tex_moon, Variable("useNormalMap", 0)], shps=[sphere])
   moon_tr_node = Node(trf=moon_translate, nodes=[moon_leaf])
   moon_orbit_node = Node(trf=moon_orbit, nodes=[moon_tr_node])
 
   # earth (with normal map)
+  global earth_leaf
   earth_leaf = Node(shader=sh_tex, trf=earth_spin, apps=[earth_mat, tex_earth, tex_earth_normal, Variable("useNormalMap", 1)], shps=[sphere])
   earth_scale_node = Node(trf=earth_scale, nodes=[earth_leaf])
   earth_tr_node = Node(trf=earth_translate, nodes=[earth_scale_node, moon_orbit_node])
@@ -172,13 +174,28 @@ def display (win):
   global camera_follow
   global active_camera
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT) 
-  # keep follow camera at earth looking at moon
+  # advance animation engines
+  current_time = glfw.get_time()
+  for e in scene.engines:
+    e.Update(current_time)
+  # update follow camera to keep Moon centered
   try:
-    from glm import vec3, normalize
-  except:
+    # compute Earth world position at origin transformed by earth_orbit and earth_translate
+    origin = glm.vec4(0,0,0,1)
+    M_earth = earth_orbit.GetMatrix() * earth_translate.GetMatrix()
+    earth_pos = glm.vec3(M_earth * origin)
+    # compute Moon world position: earth_orbit * earth_translate * moon_orbit * moon_translate
+    M_moon = earth_orbit.GetMatrix() * earth_translate.GetMatrix() * moon_orbit.GetMatrix() * moon_translate.GetMatrix()
+    moon_pos = glm.vec3(M_moon * origin)
+    # place follow camera near Earth, looking at Moon
+    cam_dir = glm.normalize(moon_pos - earth_pos)
+    cam_eye = earth_pos - cam_dir * 3.0 + glm.vec3(0.0, 1.0, 0.5)
+    camera_follow.SetEye(cam_eye.x, cam_eye.y, cam_eye.z)
+    camera_follow.SetCenter(moon_pos.x, moon_pos.y, moon_pos.z)
+    camera_follow.SetUpDir(0,1,0)
+  except Exception:
     pass
-  # simple follow: position camera at earth translate position in world
-  # (we reuse earth_translate values from transforms by recomputing with time via engines already applied in Scene.Render)
+  # render
   scene.Render(active_camera)
 
 def keyboard (win, key, scancode, action, mods):
