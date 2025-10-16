@@ -172,6 +172,7 @@ def initialize (win):
   class FollowMoonCameraEngine(Engine):
     def __init__(self):
       self.prev_side = None
+      self.prev_dir = None
     def Update(self, time):
       try:
         origin = glm.vec4(0,0,0,1)
@@ -180,25 +181,40 @@ def initialize (win):
         M_moon = earth_orbit.GetMatrix() * earth_translate.GetMatrix() * moon_orbit.GetMatrix() * moon_translate.GetMatrix()
         moon_pos = glm.vec3(M_moon * origin)
 
-        cam_dir = glm.normalize(moon_pos - earth_pos)
+        cam_dir_raw = glm.normalize(moon_pos - earth_pos)
+        # smooth direction to avoid sudden flips
+        if self.prev_dir is None:
+          cam_dir = cam_dir_raw
+        else:
+          beta = 0.12
+          cam_dir = glm.normalize(self.prev_dir * (1.0 - beta) + cam_dir_raw * beta)
+        self.prev_dir = cam_dir
         world_up = glm.vec3(0.0, 1.0, 0.0)
-        side = glm.cross(world_up, cam_dir)
-        if glm.length(side) < 1e-3:
-          side = glm.cross(glm.vec3(1.0,0.0,0.0), cam_dir)
-        side = glm.normalize(side)
-        if self.prev_side is not None and glm.dot(side, self.prev_side) < 0.0:
-          side = -side
-        self.prev_side = side
-        up = glm.normalize(glm.cross(cam_dir, side))
+        up = world_up  # lock roll to system plane to avoid flips
+        # avoid degeneracy when looking almost straight up/down
+        d = glm.dot(cam_dir, up)
+        if glm.abs(d) > 0.98:
+          cam_dir = glm.normalize(cam_dir + glm.sign(d) * up * 0.05)
         earth_radius = 1.0
         moon_radius = 0.27
-        # position camera near Earth's surface (do not move towards Moon)
-        cam_eye = earth_pos + cam_dir * (earth_radius * 1.3) + side * (earth_radius * 0.6) + up * (earth_radius * 0.2)
+        # keep safe distance from Moon to avoid entering its surface
+        moon_dist = glm.length(moon_pos - earth_pos)
+        safety = moon_radius * 2.0
+        earth_offset = earth_radius * 1.6
+        # never exceed the safe distance to Moon along the line of sight
+        along = min(earth_offset, max(0.0, moon_dist - safety))
+        cam_eye = earth_pos + cam_dir * along + up * (earth_radius * 0.2)
+        # enforce safety after adding vertical offset
+        v_eye_moon = moon_pos - cam_eye
+        dist_eye_moon = glm.length(v_eye_moon)
+        if dist_eye_moon < safety and dist_eye_moon > 1e-4:
+          push_back = (safety - dist_eye_moon) * (1.0 + 1e-3)
+          cam_eye -= cam_dir * push_back
         camera_follow.SetEye(cam_eye.x, cam_eye.y, cam_eye.z)
         camera_follow.SetCenter(moon_pos.x, moon_pos.y, moon_pos.z)
         camera_follow.SetUpDir(0,1,0)
         # fixed FOV to avoid jitter
-        camera_follow.SetAngle(70.0)
+        camera_follow.SetAngle(90.0)
       except Exception:
         pass
 
