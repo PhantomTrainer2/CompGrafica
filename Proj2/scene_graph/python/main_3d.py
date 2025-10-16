@@ -14,6 +14,7 @@ from sphere import *
 from texture import * 
 from skybox import *
 from variable import *
+from engine import Engine
 
 def main():
     # Initialize the library
@@ -168,6 +169,38 @@ def initialize (win):
   engine = SolarSystemAnimation(earth_orbit, moon_orbit, earth_spin, sun_spin, venus_orbit, venus_spin)
   scene.AddEngine(engine)
 
+  class FollowMoonCameraEngine(Engine):
+    def Update(self, time):
+      try:
+        origin = glm.vec4(0,0,0,1)
+        M_earth = earth_orbit.GetMatrix() * earth_translate.GetMatrix()
+        earth_pos = glm.vec3(M_earth * origin)
+        M_moon = earth_orbit.GetMatrix() * earth_translate.GetMatrix() * moon_orbit.GetMatrix() * moon_translate.GetMatrix()
+        moon_pos = glm.vec3(M_moon * origin)
+
+        cam_dir = glm.normalize(moon_pos - earth_pos)
+        up = glm.vec3(0.0, 1.0, 0.0)
+        side = glm.normalize(glm.cross(cam_dir, up))
+        earth_radius = 1.0
+        moon_radius = 0.27
+        # position camera near Earth's surface with slight lateral/vertical offsets
+        cam_eye = earth_pos + cam_dir * (earth_radius * 1.05) + side * (earth_radius * 0.5) + up * (earth_radius * 0.2)
+        camera_follow.SetEye(cam_eye.x, cam_eye.y, cam_eye.z)
+        camera_follow.SetCenter(moon_pos.x, moon_pos.y, moon_pos.z)
+        camera_follow.SetUpDir(0,1,0)
+        # choose FOV so the moon fits in view with margin
+        dist = glm.length(moon_pos - cam_eye)
+        if dist > 1e-4:
+          import math
+          margin = 2.0  # larger margin -> wider FOV -> Lua menor na tela
+          fov_rad = 2.0 * math.atan((moon_radius * margin) / dist)
+          fov_deg = max(40.0, min(85.0, math.degrees(fov_rad)))
+          camera_follow.SetAngle(fov_deg)
+      except Exception:
+        pass
+
+  scene.AddEngine(FollowMoonCameraEngine())
+
 def display (win):
   global scene
   global camera
@@ -178,23 +211,6 @@ def display (win):
   current_time = glfw.get_time()
   for e in scene.engines:
     e.Update(current_time)
-  # update follow camera to keep Moon centered
-  try:
-    # compute Earth world position at origin transformed by earth_orbit and earth_translate
-    origin = glm.vec4(0,0,0,1)
-    M_earth = earth_orbit.GetMatrix() * earth_translate.GetMatrix()
-    earth_pos = glm.vec3(M_earth * origin)
-    # compute Moon world position: earth_orbit * earth_translate * moon_orbit * moon_translate
-    M_moon = earth_orbit.GetMatrix() * earth_translate.GetMatrix() * moon_orbit.GetMatrix() * moon_translate.GetMatrix()
-    moon_pos = glm.vec3(M_moon * origin)
-    # place follow camera near Earth, looking at Moon
-    cam_dir = glm.normalize(moon_pos - earth_pos)
-    cam_eye = earth_pos - cam_dir * 3.0 + glm.vec3(0.0, 1.0, 0.5)
-    camera_follow.SetEye(cam_eye.x, cam_eye.y, cam_eye.z)
-    camera_follow.SetCenter(moon_pos.x, moon_pos.y, moon_pos.z)
-    camera_follow.SetUpDir(0,1,0)
-  except Exception:
-    pass
   # render
   scene.Render(active_camera)
 
