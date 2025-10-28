@@ -107,11 +107,11 @@ def initialize (win):
   # Red Sphere - Relative to table
   red_sphere_trf = Transform()
   red_sphere_trf.Scale(0.6/3.0, 0.6/0.2, 0.6/2.0)
-  red_sphere_trf.Rotate(180, 0, 1, 0)  # Rotate 180 degrees around Y to show terrain
+  red_sphere_trf.Rotate(90, 0, 1, 0)  # Rotate 180 degrees around Y to show terrain
   # Y: (0.2/2 + 0.6/2) / 0.2 = 2.0
   # X: 1.0 / 3.0 (table x-scale)
   # Z: 0.5 / 2.0 (table z-scale)
-  red_sphere_trf.Translate(-2.0, 1.2, 1.0)
+  red_sphere_trf.Translate(1.3, 1.3, 1.5)
 
   # Wood Cylinder - Relative to table
   wood_cylinder_trf = Transform()
