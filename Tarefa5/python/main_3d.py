@@ -29,7 +29,7 @@ def main():
     glfw.window_hint(glfw.CONTEXT_VERSION_MINOR,1)
     glfw.window_hint(glfw.OPENGL_PROFILE, glfw.OPENGL_CORE_PROFILE)
     glfw.window_hint(glfw.OPENGL_FORWARD_COMPAT,GL_TRUE)
-    win = glfw.create_window(640, 480, "Tarefa 2.1", None, None)
+    win = glfw.create_window(640, 480, "Tarefa 2.2", None, None)
     if not win:
         glfw.terminate()
         return
