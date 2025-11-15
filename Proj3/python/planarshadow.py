@@ -1,4 +1,3 @@
-# planarshadow.py
 import glm
 from appearance import Appearance
 
@@ -16,7 +15,7 @@ class PlanarShadow(Appearance):
 
     def _shadow_matrix(self):
         # Plano: a*x + b*y + c*z + d = 0
-        n = self.plane_normal
+        n = glm.normalize(self.plane_normal)
         a, b, c = n.x, n.y, n.z
         d = -glm.dot(n, self.plane_point)
 
@@ -26,31 +25,31 @@ class PlanarShadow(Appearance):
 
         dot = a*lx + b*ly + c*lz + d*lw
 
-        # glm é column-major, então m[col][row]
-        m = glm.mat4(1.0)
+        # glm é column-major: m[col][row]
+        m = glm.mat4(0.0)
 
-        # Primeira linha (row 0)
-        m[0][0] = dot - lx * a
-        m[1][0] = -ly * a
-        m[2][0] = -lz * a
-        m[3][0] = -lw * a
+        # Coluna 0 (coeficiente a)
+        m[0][0] = dot - lx * a   # row 0, col 0
+        m[0][1] = -ly * a        # row 1, col 0
+        m[0][2] = -lz * a        # row 2, col 0
+        m[0][3] = -lw * a        # row 3, col 0
 
-        # Segunda linha (row 1)
-        m[0][1] = -lx * b
+        # Coluna 1 (coeficiente b)
+        m[1][0] = -lx * b
         m[1][1] = dot - ly * b
-        m[2][1] = -lz * b
-        m[3][1] = -lw * b
+        m[1][2] = -lz * b
+        m[1][3] = -lw * b
 
-        # Terceira linha (row 2)
-        m[0][2] = -lx * c
-        m[1][2] = -ly * c
+        # Coluna 2 (coeficiente c)
+        m[2][0] = -lx * c
+        m[2][1] = -ly * c
         m[2][2] = dot - lz * c
-        m[3][2] = -lw * c
+        m[2][3] = -lw * c
 
-        # Quarta linha (row 3)
-        m[0][3] = -lx * d
-        m[1][3] = -ly * d
-        m[2][3] = -lz * d
+        # Coluna 3 (coeficiente d)
+        m[3][0] = -lx * d
+        m[3][1] = -ly * d
+        m[3][2] = -lz * d
         m[3][3] = dot - lw * d
 
         return m
