@@ -71,26 +71,21 @@ def initialize (win):
   # -----------------------------
   #   CONSTANTES DA MESA
   # -----------------------------
-  TABLE_SX = 5.0   # largura (antes era 3.0)
+  TABLE_SX = 5.0   # largura
   TABLE_SY = 0.2   # espessura
-  TABLE_SZ = 4.0   # profundidade (antes era 2.0)
-
-  # Topo da mesa em y:
-  # centro em -2.5, cubo unitário [-0.5,0.5] => top = -2.5 + TABLE_SY*0.5
-  table_top_y = -2.5 + TABLE_SY * 0.5  # continua ≈ -2.4
+  TABLE_SZ = 4.0   # profundidade
 
   # -----------------------------
   #   TRANSFORMS DA CENA
   # -----------------------------
-  # Mesa
+  # Mesa: cube com Y em [0,1]
   table_trf = Transform()
   table_trf.Scale(TABLE_SX, TABLE_SY, TABLE_SZ)
   table_trf.Translate(0.0, -2.5, 0.0)
 
-  # Caixa em cima da mesa (tamanho 0.8 x 0.4 x 0.8 em mundo)
+  # Caixa em cima da mesa (tamanho ~0.8 x 0.4 x 0.8 em mundo)
   box_trf = Transform()
   box_trf.Scale(0.8 / TABLE_SX, 0.4 / TABLE_SY, 0.8 / TABLE_SZ)
-  # posição relativa (já estava visualmente boa)
   box_trf.Translate(0.0, 0.5, 0.0)
 
   # Esfera verde (filha da caixa)
@@ -102,7 +97,7 @@ def initialize (win):
   red_sphere_trf = Transform()
   red_sphere_trf.Scale(0.6 / TABLE_SX, 0.6 / TABLE_SY, 0.6 / TABLE_SZ)
   red_sphere_trf.Rotate(90, 0, 1, 0)
-  red_sphere_trf.Translate(1.3, 1.3, 1.5)
+  red_sphere_trf.Translate(1, 1.3, 2)
 
   # Cilindro de madeira (raio 0.3, altura 0.8 em mundo)
   wood_cylinder_trf = Transform()
@@ -112,7 +107,7 @@ def initialize (win):
   # Cilindro laranja (raio 0.25, altura 0.4 em mundo)
   blue_cylinder_trf = Transform()
   blue_cylinder_trf.Scale(0.25 / TABLE_SX, 0.4 / TABLE_SY, 0.25 / TABLE_SZ)
-  blue_cylinder_trf.Translate(-1, 3.5, 0.6)
+  blue_cylinder_trf.Translate(-1, 2, 0.6)
 
   # -----------------------------
   #   SHADERS
@@ -120,32 +115,28 @@ def initialize (win):
   script_dir = os.path.dirname(os.path.abspath(__file__))
   sh_dir = os.path.join(script_dir, "..", "shaders", "ilum_vert")
 
-  # Shader padrão com iluminação (objetos sólidos)
   shader = Shader(light, "camera")
   shader.AttachVertexShader(os.path.join(sh_dir, "vertex.glsl"))
   shader.AttachFragmentShader(os.path.join(sh_dir, "fragment.glsl"))
   shader.Link()
 
-  # Shader com textura (terra, cilindro de madeira)
   shader_texture = Shader(light, "camera")
   shader_texture.AttachVertexShader(os.path.join(sh_dir, "vertex_texture.glsl"))
   shader_texture.AttachFragmentShader(os.path.join(sh_dir, "fragment_texture.glsl"))
   shader_texture.Link()
 
-  # Shader para sombras planares
   shadow_shader = Shader(None, "camera")
   shadow_shader.AttachVertexShader(os.path.join(sh_dir, "shadow_vertex.glsl"))
   shadow_shader.AttachFragmentShader(os.path.join(sh_dir, "shadow_fragment.glsl"))
   shadow_shader.Link()
 
-  # Shader para instanciamento via geometry shader (usado no cilindro laranja)
   instanced_shader = Shader(light, "camera")
   instanced_shader.AttachVertexShader(os.path.join(sh_dir, "instanced_vertex.glsl"))
   instanced_shader.AttachGeometryShader(os.path.join(sh_dir, "instanced_geom.glsl"))
   instanced_shader.AttachFragmentShader(os.path.join(sh_dir, "instanced_fragment.glsl"))
   instanced_shader.Link()
 
-  # Para o trabalho: 1 instância (offset zero) já satisfaz o uso de GS para instancing
+  # Geometry shader para o cilindro laranja (1 instância já satisfaz o requisito)
   instanced_shader.UseProgram()
   instanced_shader.SetUniform("instanceCount", 1)
   instanced_shader.SetUniform("instanceOffsets", [glm.vec3(0.0, 0.0, 0.0)])
@@ -158,8 +149,17 @@ def initialize (win):
   earth_texture = Texture("decal", os.path.join(script_dir, "..", "images", "earth.jpg"))
   earth_normal = Texture("normalMap", os.path.join(script_dir, "..", "images", "earth-normal.png"))
 
-  # Plano da mesa para sombras: usa topo exato y = table_top_y
-  table_plane_point = glm.vec3(0.0, table_top_y, 0.0)
+  # -----------------------------
+  #   PLANO EXATO DA MESA P/ SOMBRAS
+  # -----------------------------
+  # Em vez de chutar a altura, perguntamos para a matriz da mesa
+  # posição do topo do cubo: local (0,1,0,1)
+  table_mat = table_trf.GetMatrix()
+  local_top = glm.vec4(0.0, 1.0, 0.0, 1.0)
+  world_top = table_mat * local_top
+
+  # Plano passa exatamente pelo topo da mesa; levantamos 0.001 pra evitar z-fighting
+  table_plane_point = glm.vec3(world_top.x, world_top.y + 0.001, world_top.z)
   table_plane_normal = glm.vec3(0.0, 1.0, 0.0)
 
   shadow_color = glm.vec4(0.0, 0.0, 0.0, 0.5)

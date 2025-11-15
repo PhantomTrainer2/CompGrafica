@@ -58,9 +58,11 @@ class PlanarShadow(Appearance):
         # Guarda a matriz de model atual (M)
         self._saved_matrix = st.GetCurrentMatrix()
         S = self._shadow_matrix()
-
-        # Matriz final de model para a sombra: S * M
         shadow_model = S * self._saved_matrix
+        
+        offset = glm.translate(glm.mat4(1.0), glm.vec3(-0.1, 0.0, -0.1))  # move sombra em +X
+        shadow_model = offset * shadow_model
+
         st.LoadMatrix(shadow_model)
 
     def Unload(self, st):
