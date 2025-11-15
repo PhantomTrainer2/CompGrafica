@@ -97,7 +97,7 @@ def initialize (win):
   red_sphere_trf = Transform()
   red_sphere_trf.Scale(0.6 / TABLE_SX, 0.6 / TABLE_SY, 0.6 / TABLE_SZ)
   red_sphere_trf.Rotate(90, 0, 1, 0)
-  red_sphere_trf.Translate(1, 1.3, 2)
+  red_sphere_trf.Translate(0.8, 1.3, 2)
 
   # Cilindro de madeira (raio 0.3, altura 0.8 em mundo)
   wood_cylinder_trf = Transform()
