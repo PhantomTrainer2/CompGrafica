@@ -52,21 +52,46 @@ def initialize (win):
   light = Light(5.0, 7.0, 5.0)  # um pouco mais alta
 
   # -----------------------------
+  #   CAMINHOS
+  # -----------------------------
+  script_dir = os.path.dirname(os.path.abspath(__file__))
+  sh_dir     = os.path.join(script_dir, "..", "shaders", "ilum_vert")
+  models_dir = os.path.join(script_dir, "..", "models")
+
+  # -----------------------------
   #   MATERIAIS
   # -----------------------------
-  table_material = Material(0.5, 0.25, 0.0)
-  box_material = Material(1.0, 0.5, 0.0)
-  green_material = Material(0.0, 1.0, 0.0)
-  wood_material = Material(1.0, 1.0, 1.0)
-  earth_material = Material(1.0, 1.0, 1.0)
+  table_material  = Material(0.5, 0.25, 0.0)
+  box_material    = Material(1.0, 0.5, 0.0)
+  green_material  = Material(0.0, 1.0, 0.0)
+  wood_material   = Material(1.0, 1.0, 1.0)
+  earth_material  = Material(1.0, 1.0, 1.0)
   orange_material = Material(1.0, 0.5, 0.1)
 
   # -----------------------------
-  #   GEOMETRIAS
+  #   GEOMETRIAS BASE (procedurais)
   # -----------------------------
-  cube = Cube()
-  sphere = Sphere()
-  cylinder = Cylinder()
+  cube      = Cube()      # mesa
+  sphere    = Sphere()    # vamos usar só para a Terra (para preservar UV)
+  cylinder  = Cylinder()
+
+  # -----------------------------
+  #   TENTATIVAS DE CARREGAR .OBJ
+  # -----------------------------
+  def load_obj_or_none(filename):
+      path = os.path.join(models_dir, filename)
+      if os.path.exists(path):
+          return OBJMesh(path)
+      return None
+
+  box_mesh      = load_obj_or_none("box.obj")
+  sphere_mesh   = load_obj_or_none("sphere.obj")
+  cylinder_mesh = load_obj_or_none("cylinder.obj")
+
+  # ATENÇÃO:
+  # - Se box_mesh for None -> não renderiza caixa nem sombra
+  # - Se sphere_mesh for None -> não renderiza nenhuma esfera (nem Terra, nem verde)
+  # - Se cylinder_mesh for None -> não renderiza cilindros
 
   # -----------------------------
   #   CONSTANTES DA MESA
@@ -83,7 +108,7 @@ def initialize (win):
   table_trf.Scale(TABLE_SX, TABLE_SY, TABLE_SZ)
   table_trf.Translate(0.0, -2.5, 0.0)
 
-  # Caixa em cima da mesa (tamanho ~0.8 x 0.4 x 0.8 em mundo)
+  # Caixa em cima da mesa
   box_trf = Transform()
   box_trf.Scale(0.8 / TABLE_SX, 0.4 / TABLE_SY, 0.8 / TABLE_SZ)
   box_trf.Translate(0.0, 0.5, 0.0)
@@ -93,18 +118,18 @@ def initialize (win):
   green_sphere_trf.Scale(0.2, 0.4, 0.2)
   green_sphere_trf.Translate(1.5, 3.5, -0.8)
 
-  # Esfera "Terra" (raio ~0.6 em mundo)
+  # Esfera "Terra"
   red_sphere_trf = Transform()
   red_sphere_trf.Scale(0.6 / TABLE_SX, 0.6 / TABLE_SY, 0.6 / TABLE_SZ)
   red_sphere_trf.Rotate(90, 0, 1, 0)
   red_sphere_trf.Translate(0.8, 1.3, 2)
 
-  # Cilindro de madeira (raio 0.3, altura 0.8 em mundo)
+  # Cilindro de madeira
   wood_cylinder_trf = Transform()
   wood_cylinder_trf.Scale(0.3 / TABLE_SX, 0.8 / TABLE_SY, 0.3 / TABLE_SZ)
   wood_cylinder_trf.Translate(-4, 0.6, 2)
 
-  # Cilindro laranja (raio 0.25, altura 0.4 em mundo)
+  # Cilindro laranja
   blue_cylinder_trf = Transform()
   blue_cylinder_trf.Scale(0.25 / TABLE_SX, 0.4 / TABLE_SY, 0.25 / TABLE_SZ)
   blue_cylinder_trf.Translate(-1, 2, 0.6)
@@ -112,9 +137,6 @@ def initialize (win):
   # -----------------------------
   #   SHADERS
   # -----------------------------
-  script_dir = os.path.dirname(os.path.abspath(__file__))
-  sh_dir = os.path.join(script_dir, "..", "shaders", "ilum_vert")
-
   shader = Shader(light, "camera")
   shader.AttachVertexShader(os.path.join(sh_dir, "vertex.glsl"))
   shader.AttachFragmentShader(os.path.join(sh_dir, "fragment.glsl"))
@@ -136,7 +158,6 @@ def initialize (win):
   instanced_shader.AttachFragmentShader(os.path.join(sh_dir, "instanced_fragment.glsl"))
   instanced_shader.Link()
 
-  # Geometry shader para o cilindro laranja (1 instância já satisfaz o requisito)
   instanced_shader.UseProgram()
   instanced_shader.SetUniform("instanceCount", 1)
   instanced_shader.SetUniform("instanceOffsets", [glm.vec3(0.0, 0.0, 0.0)])
@@ -145,21 +166,18 @@ def initialize (win):
   # -----------------------------
   #   TEXTURAS
   # -----------------------------
-  wood_texture = Texture("decal", os.path.join(script_dir, "..", "images", "wood.jpg"))
+  wood_texture  = Texture("decal", os.path.join(script_dir, "..", "images", "wood.jpg"))
   earth_texture = Texture("decal", os.path.join(script_dir, "..", "images", "earth.jpg"))
-  earth_normal = Texture("normalMap", os.path.join(script_dir, "..", "images", "earth-normal.png"))
+  earth_normal  = Texture("normalMap", os.path.join(script_dir, "..", "images", "earth-normal.png"))
 
   # -----------------------------
   #   PLANO EXATO DA MESA P/ SOMBRAS
   # -----------------------------
-  # Em vez de chutar a altura, perguntamos para a matriz da mesa
-  # posição do topo do cubo: local (0,1,0,1)
-  table_mat = table_trf.GetMatrix()
-  local_top = glm.vec4(0.0, 1.0, 0.0, 1.0)
-  world_top = table_mat * local_top
+  table_mat  = table_trf.GetMatrix()
+  local_top  = glm.vec4(0.0, 1.0, 0.0, 1.0)
+  world_top  = table_mat * local_top
 
-  # Plano passa exatamente pelo topo da mesa; levantamos 0.001 pra evitar z-fighting
-  table_plane_point = glm.vec3(world_top.x, world_top.y + 0.001, world_top.z)
+  table_plane_point  = glm.vec3(world_top.x, world_top.y + 0.001, world_top.z)
   table_plane_normal = glm.vec3(0.0, 1.0, 0.0)
 
   shadow_color = glm.vec4(0.0, 0.0, 0.0, 0.5)
@@ -169,117 +187,118 @@ def initialize (win):
   # -----------------------------
   root = Node(shader)
 
-  # Mesa
+  # Mesa (sempre renderizada)
   table_node = Node(None, table_trf, [table_material], [cube])
   root.AddNode(table_node)
 
-  # Caixa em cima da mesa
-  box_node = Node(None, box_trf, [box_material], [cube])
-  table_node.AddNode(box_node)
+  # ------ Caixa e esfera verde (só se box.obj e sphere.obj existirem) ------
+  if box_mesh is not None:
+      box_node = Node(None, box_trf, [box_material], [box_mesh])
+      table_node.AddNode(box_node)
 
-  # Esfera verde filha da caixa
-  green_node = Node(None, green_sphere_trf, [green_material], [sphere])
-  box_node.AddNode(green_node)
+      if sphere_mesh is not None:
+          green_node = Node(None, green_sphere_trf, [green_material], [sphere_mesh])
+          box_node.AddNode(green_node)
 
-  # Esfera "Terra" texturizada
-  red_sphere_node = Node(
-      shader_texture,
-      red_sphere_trf,
-      [earth_material, earth_texture, earth_normal, Variable("useNormalMap", 1)],
-      [sphere]
-  )
-  table_node.AddNode(red_sphere_node)
+          green_shadow = Node(
+              shadow_shader,
+              green_sphere_trf,
+              [
+                  PlanarShadow(light, table_plane_point, table_plane_normal),
+                  PolygonOffset(-1, -1),
+                  Variable("shadowColor", shadow_color),
+              ],
+              [sphere_mesh],
+          )
+          box_node.AddNode(green_shadow)
 
-  # Cilindro de madeira texturizado
-  wood_cylinder_node = Node(
-      shader_texture,
-      wood_cylinder_trf,
-      [wood_material, wood_texture],
-      [cylinder]
-  )
-  table_node.AddNode(wood_cylinder_node)
+      box_shadow = Node(
+          shadow_shader,
+          box_trf,
+          [
+              PlanarShadow(light, table_plane_point, table_plane_normal),
+              PolygonOffset(-1, -1),
+              Variable("shadowColor", shadow_color),
+          ],
+          [box_mesh],
+      )
+      table_node.AddNode(box_shadow)
 
-  # Cilindro laranja usando geometry shader de instancing
-  blue_cylinder_node = Node(
-      instanced_shader,
-      blue_cylinder_trf,
-      [orange_material],
-      [cylinder]
-  )
-  table_node.AddNode(blue_cylinder_node)
+  # ------ Esfera "Terra" (só se sphere.obj existir) ------
+  # Usa a malha procedural Sphere() para manter o mapeamento de textura,
+  # mas só é renderizada se o arquivo sphere.obj estiver presente.
+  if sphere_mesh is not None:
+      red_sphere_node = Node(
+          shader_texture,
+          red_sphere_trf,
+          [earth_material, earth_texture, earth_normal, Variable("useNormalMap", 1)],
+          [sphere]  # Sphere() com UVs corretos
+      )
+      table_node.AddNode(red_sphere_node)
 
-  # -----------------------------
-  #      SOMBRAS PLANARES
-  # -----------------------------
-  box_shadow = Node(
-      shadow_shader,
-      box_trf,
-      [
-          PlanarShadow(light, table_plane_point, table_plane_normal),
-          PolygonOffset(-1, -1),
-          Variable("shadowColor", shadow_color),
-      ],
-      [cube],
-  )
-  table_node.AddNode(box_shadow)
+      red_shadow = Node(
+          shadow_shader,
+          red_sphere_trf,
+          [
+              PlanarShadow(light, table_plane_point, table_plane_normal),
+              PolygonOffset(-1, -1),
+              Variable("shadowColor", shadow_color),
+          ],
+          [sphere],
+      )
+      table_node.AddNode(red_shadow)
 
-  green_shadow = Node(
-      shadow_shader,
-      green_sphere_trf,
-      [
-          PlanarShadow(light, table_plane_point, table_plane_normal),
-          PolygonOffset(-1, -1),
-          Variable("shadowColor", shadow_color),
-      ],
-      [sphere],
-  )
-  box_node.AddNode(green_shadow)
+  # ------ Cilindros (só se cylinder.obj existir) ------
+  if cylinder_mesh is not None:
+      wood_cylinder_node = Node(
+          shader_texture,
+          wood_cylinder_trf,
+          [wood_material, wood_texture],
+          [cylinder_mesh]
+      )
+      table_node.AddNode(wood_cylinder_node)
 
-  red_shadow = Node(
-      shadow_shader,
-      red_sphere_trf,
-      [
-          PlanarShadow(light, table_plane_point, table_plane_normal),
-          PolygonOffset(-1, -1),
-          Variable("shadowColor", shadow_color),
-      ],
-      [sphere],
-  )
-  table_node.AddNode(red_shadow)
+      blue_cylinder_node = Node(
+          instanced_shader,
+          blue_cylinder_trf,
+          [orange_material],
+          [cylinder_mesh]
+      )
+      table_node.AddNode(blue_cylinder_node)
 
-  wood_shadow = Node(
-      shadow_shader,
-      wood_cylinder_trf,
-      [
-          PlanarShadow(light, table_plane_point, table_plane_normal),
-          PolygonOffset(-1, -1),
-          Variable("shadowColor", shadow_color),
-      ],
-      [cylinder],
-  )
-  table_node.AddNode(wood_shadow)
+      wood_shadow = Node(
+          shadow_shader,
+          wood_cylinder_trf,
+          [
+              PlanarShadow(light, table_plane_point, table_plane_normal),
+              PolygonOffset(-1, -1),
+              Variable("shadowColor", shadow_color),
+          ],
+          [cylinder_mesh],
+      )
+      table_node.AddNode(wood_shadow)
 
-  blue_shadow = Node(
-      shadow_shader,
-      blue_cylinder_trf,
-      [
-          PlanarShadow(light, table_plane_point, table_plane_normal),
-          PolygonOffset(-1, -1),
-          Variable("shadowColor", shadow_color),
-      ],
-      [cylinder],
-  )
-  table_node.AddNode(blue_shadow)
+      blue_shadow = Node(
+          shadow_shader,
+          blue_cylinder_trf,
+          [
+              PlanarShadow(light, table_plane_point, table_plane_normal),
+              PolygonOffset(-1, -1),
+              Variable("shadowColor", shadow_color),
+          ],
+          [cylinder_mesh],
+      )
+      table_node.AddNode(blue_shadow)
 
   # -----------------------------
   #  OBJ OPCIONAL (teapot)
   # -----------------------------
-  obj_path = os.path.join(script_dir, "..", "models", "teapot.obj")
-  if os.path.exists(obj_path):
+  teapot_path = os.path.join(models_dir, "teapot.obj")
+  if os.path.exists(teapot_path):
       obj_trf = Transform()
       obj_trf.Scale(0.4, 0.4, 0.4)
       obj_trf.Translate(-0.5, 0.5, -0.5)
-      obj_mesh = OBJMesh(obj_path)
+      obj_mesh = OBJMesh(teapot_path)
       obj_node = Node(None, obj_trf, [Material(0.7, 0.7, 0.7)], [obj_mesh])
       table_node.AddNode(obj_node)
 
