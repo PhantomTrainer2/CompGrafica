@@ -16,7 +16,8 @@ class OBJMesh(Shape):
         normals = []
         texcoords = []
 
-        with open(filename) as f:
+        with open(filename, 'r', encoding='utf-8', errors='ignore') as f:
+
             for line in f:
                 if line.startswith("#") or line.strip() == "":
                     continue
