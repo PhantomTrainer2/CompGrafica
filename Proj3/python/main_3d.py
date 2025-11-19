@@ -110,12 +110,12 @@ def initialize (win):
 
   # Caixa em cima da mesa
   box_trf = Transform()
-  box_trf.Scale(0.8 / TABLE_SX, 0.4 / TABLE_SY, 0.8 / TABLE_SZ)
-  box_trf.Translate(0.0, 0.5, 0.0)
+  box_trf.Scale(0.5 / TABLE_SX, 0.2 / TABLE_SY, 0.5 / TABLE_SZ)
+  box_trf.Translate(0.0, 1.5, 0.0)
 
   # Esfera verde (filha da caixa)
   green_sphere_trf = Transform()
-  green_sphere_trf.Scale(0.2, 0.4, 0.2)
+  green_sphere_trf.Scale(0.2, 0.5, 0.2)
   green_sphere_trf.Translate(1.5, 3.5, -0.8)
 
   # Esfera "Terra"
@@ -126,13 +126,15 @@ def initialize (win):
 
   # Cilindro de madeira
   wood_cylinder_trf = Transform()
-  wood_cylinder_trf.Scale(0.3 / TABLE_SX, 0.8 / TABLE_SY, 0.3 / TABLE_SZ)
-  wood_cylinder_trf.Translate(-4, 0.6, 2)
+  wood_cylinder_trf.Scale(0.3 / TABLE_SX, 0.3 / TABLE_SY, 0.3 / TABLE_SZ)
+  wood_cylinder_trf.Translate(-4, 2.0, 2)
+  wood_cylinder_trf.Rotate(90, 1, 0, 0)
 
   # Cilindro laranja
   blue_cylinder_trf = Transform()
-  blue_cylinder_trf.Scale(0.25 / TABLE_SX, 0.4 / TABLE_SY, 0.25 / TABLE_SZ)
-  blue_cylinder_trf.Translate(-1, 2, 0.6)
+  blue_cylinder_trf.Scale(0.25 / TABLE_SX, 0.25 / TABLE_SY, 0.25 / TABLE_SZ)
+  blue_cylinder_trf.Translate(-1, 5, 0.6)
+  blue_cylinder_trf.Rotate(90, 1, 0, 0)
 
   # -----------------------------
   #   SHADERS
@@ -258,14 +260,6 @@ def initialize (win):
       )
       table_node.AddNode(wood_cylinder_node)
 
-      blue_cylinder_node = Node(
-          instanced_shader,
-          blue_cylinder_trf,
-          [orange_material],
-          [cylinder_mesh]
-      )
-      table_node.AddNode(blue_cylinder_node)
-
       wood_shadow = Node(
           shadow_shader,
           wood_cylinder_trf,
@@ -277,6 +271,17 @@ def initialize (win):
           [cylinder_mesh],
       )
       table_node.AddNode(wood_shadow)
+
+      blue_cylinder_node = Node(
+          instanced_shader,
+          blue_cylinder_trf,
+          [orange_material],
+          [cylinder_mesh]
+      )
+      table_node.AddNode(blue_cylinder_node)
+
+      
+     
 
       blue_shadow = Node(
           shadow_shader,
