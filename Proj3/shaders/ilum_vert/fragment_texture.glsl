@@ -36,6 +36,7 @@ void main (void)
     vec3 B = normalize(cross(N, T));
     mat3 TBN = mat3(T, B, N);
     vec3 nMap = texture(normalMap, f.texcoord).xyz * 2.0 - 1.0;
+    nMap.y = -nMap.y;
     n = normalize(TBN * nMap);
   }
 

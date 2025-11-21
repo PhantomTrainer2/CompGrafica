@@ -49,8 +49,8 @@ def initialize (win):
   arcball = camera.CreateArcball()
   arcball.Attach(win)
 
-  light = Light(5.0, 7.0, 5.0)  # um pouco mais alta
-
+  light = Light(7.0, 10.0, 7.0)  # um pouco mais alta
+  light.SetAmbient (0.4, 0.4, 0.4) #
   # -----------------------------
   #   CAMINHOS
   # -----------------------------
@@ -87,7 +87,6 @@ def initialize (win):
   box_mesh      = load_obj_or_none("box.obj")
   sphere_mesh   = load_obj_or_none("sphere.obj")
   cylinder_mesh = load_obj_or_none("cylinder.obj")
-
   # ATENÇÃO:
   # - Se box_mesh for None -> não renderiza caixa nem sombra
   # - Se sphere_mesh for None -> não renderiza nenhuma esfera (nem Terra, nem verde)
@@ -111,29 +110,30 @@ def initialize (win):
   # Caixa em cima da mesa
   box_trf = Transform()
   box_trf.Scale(0.5 / TABLE_SX, 0.2 / TABLE_SY, 0.5 / TABLE_SZ)
-  box_trf.Translate(0.0, 1.5, 0.0)
+  box_trf.Translate(0.0, 2.0, 0.0)
 
   # Esfera verde (filha da caixa)
   green_sphere_trf = Transform()
-  green_sphere_trf.Scale(0.2, 0.5, 0.2)
-  green_sphere_trf.Translate(1.5, 3.5, -0.8)
+  green_sphere_trf.Scale(-0.2, -0.5, -0.2)
+  green_sphere_trf.Translate(-2.5, -3.1, -0.8)
 
   # Esfera "Terra"
   red_sphere_trf = Transform()
-  red_sphere_trf.Scale(0.6 / TABLE_SX, 0.6 / TABLE_SY, 0.6 / TABLE_SZ)
-  red_sphere_trf.Rotate(90, 0, 1, 0)
-  red_sphere_trf.Translate(0.8, 1.3, 2)
+  red_sphere_trf.Scale(-0.6 / TABLE_SX, -0.6 / TABLE_SY, -0.6 / TABLE_SZ)
+  #red_sphere_trf.Rotate(90, 0, 1, 0)
+  red_sphere_trf.Translate(-2, -1.3, 1)
+  
 
   # Cilindro de madeira
   wood_cylinder_trf = Transform()
   wood_cylinder_trf.Scale(0.3 / TABLE_SX, 0.3 / TABLE_SY, 0.3 / TABLE_SZ)
-  wood_cylinder_trf.Translate(-4, 2.0, 2)
+  wood_cylinder_trf.Translate(-4, 2.18, 2)
   wood_cylinder_trf.Rotate(90, 1, 0, 0)
 
   # Cilindro laranja
   blue_cylinder_trf = Transform()
-  blue_cylinder_trf.Scale(0.25 / TABLE_SX, 0.25 / TABLE_SY, 0.25 / TABLE_SZ)
-  blue_cylinder_trf.Translate(-1, 5, 0.6)
+  blue_cylinder_trf.Scale(0.3, 0.7, 0.3)
+  blue_cylinder_trf.Translate(-1, 3, 0.6)
   blue_cylinder_trf.Rotate(90, 1, 0, 0)
 
   # -----------------------------
@@ -149,7 +149,7 @@ def initialize (win):
   shader_texture.AttachFragmentShader(os.path.join(sh_dir, "fragment_texture.glsl"))
   shader_texture.Link()
 
-  shadow_shader = Shader(None, "camera")
+  shadow_shader = Shader(None, "world")
   shadow_shader.AttachVertexShader(os.path.join(sh_dir, "shadow_vertex.glsl"))
   shadow_shader.AttachFragmentShader(os.path.join(sh_dir, "shadow_fragment.glsl"))
   shadow_shader.Link()
@@ -161,7 +161,7 @@ def initialize (win):
   instanced_shader.Link()
 
   instanced_shader.UseProgram()
-  instanced_shader.SetUniform("instanceCount", 1)
+  instanced_shader.SetUniform("instanceCount", 1) 
   instanced_shader.SetUniform("instanceOffsets", [glm.vec3(0.0, 0.0, 0.0)])
   glUseProgram(0)
 
@@ -178,10 +178,14 @@ def initialize (win):
   table_mat  = table_trf.GetMatrix()
   local_top  = glm.vec4(0.0, 1.0, 0.0, 1.0)
   world_top  = table_mat * local_top
-
-  table_plane_point  = glm.vec3(world_top.x, world_top.y + 0.001, world_top.z)
+  
+  box_mat    = box_trf.GetMatrix()
+  box_top    = table_mat * (box_mat * local_top)
+  table_plane_point  = glm.vec3(world_top.x, world_top.y, world_top.z)
   table_plane_normal = glm.vec3(0.0, 1.0, 0.0)
 
+  box_plane_point = glm.vec3(box_top.x, box_top.y + 0.001, box_top.z)
+  
   shadow_color = glm.vec4(0.0, 0.0, 0.0, 0.5)
 
   # -----------------------------
@@ -190,16 +194,16 @@ def initialize (win):
   root = Node(shader)
 
   # Mesa (sempre renderizada)
-  table_node = Node(None, table_trf, [table_material], [cube])
+  table_node = Node(shader, table_trf, [table_material], [cube])
   root.AddNode(table_node)
 
   # ------ Caixa e esfera verde (só se box.obj e sphere.obj existirem) ------
   if box_mesh is not None:
-      box_node = Node(None, box_trf, [box_material], [box_mesh])
+      box_node = Node(shader, box_trf, [box_material], [box_mesh])
       table_node.AddNode(box_node)
 
       if sphere_mesh is not None:
-          green_node = Node(None, green_sphere_trf, [green_material], [sphere_mesh])
+          green_node = Node(shader, green_sphere_trf, [green_material,Variable("useNormalMap", 0)], [sphere_mesh])
           box_node.AddNode(green_node)
 
           green_shadow = Node(
@@ -207,10 +211,11 @@ def initialize (win):
               green_sphere_trf,
               [
                   PlanarShadow(light, table_plane_point, table_plane_normal),
+                  PlanarShadow(light, box_plane_point, table_plane_normal),
                   PolygonOffset(-1, -1),
                   Variable("shadowColor", shadow_color),
               ],
-              [sphere_mesh],
+              [sphere_mesh]
           )
           box_node.AddNode(green_shadow)
 
@@ -234,7 +239,7 @@ def initialize (win):
           shader_texture,
           red_sphere_trf,
           [earth_material, earth_texture, earth_normal, Variable("useNormalMap", 1)],
-          [sphere]  # Sphere() com UVs corretos
+          [sphere_mesh]  # Sphere() com UVs corretos
       )
       table_node.AddNode(red_sphere_node)
 
@@ -244,9 +249,9 @@ def initialize (win):
           [
               PlanarShadow(light, table_plane_point, table_plane_normal),
               PolygonOffset(-1, -1),
-              Variable("shadowColor", shadow_color),
+              Variable("shadowColor", shadow_color)
           ],
-          [sphere],
+          [sphere_mesh]
       )
       table_node.AddNode(red_shadow)
 
@@ -255,7 +260,7 @@ def initialize (win):
       wood_cylinder_node = Node(
           shader_texture,
           wood_cylinder_trf,
-          [wood_material, wood_texture],
+          [wood_material, wood_texture, Variable("useNormalMap", 0)],
           [cylinder_mesh]
       )
       table_node.AddNode(wood_cylinder_node)
@@ -278,22 +283,19 @@ def initialize (win):
           [orange_material],
           [cylinder_mesh]
       )
-      table_node.AddNode(blue_cylinder_node)
-
-      
-     
+      box_node.AddNode(blue_cylinder_node)
 
       blue_shadow = Node(
           shadow_shader,
           blue_cylinder_trf,
           [
-              PlanarShadow(light, table_plane_point, table_plane_normal),
+              PlanarShadow(light, box_plane_point, table_plane_normal),
               PolygonOffset(-1, -1),
               Variable("shadowColor", shadow_color),
           ],
           [cylinder_mesh],
       )
-      table_node.AddNode(blue_shadow)
+      box_node.AddNode(blue_shadow)
 
   # -----------------------------
   #  OBJ OPCIONAL (teapot)
@@ -312,6 +314,10 @@ def initialize (win):
 def display (win):
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
   scene.Render(camera)
+
+def resize_win (win):
+  width, height = glfw.get_framebuffer_size(win)
+  glViewport(0, 0, width, height)
 
 def main():
     if not glfw.init():
@@ -335,6 +341,7 @@ def main():
 
     while not glfw.window_should_close(win):
         display(win)
+        resize_win(win)
         glfw.swap_buffers(win)
         glfw.poll_events()
 
