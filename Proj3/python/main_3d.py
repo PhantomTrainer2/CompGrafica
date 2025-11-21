@@ -131,10 +131,10 @@ def initialize (win):
   wood_cylinder_trf.Rotate(90, 1, 0, 0)
 
   # Cilindro laranja
-  blue_cylinder_trf = Transform()
-  blue_cylinder_trf.Scale(0.3, 0.7, 0.3)
-  blue_cylinder_trf.Translate(-1, 3, 0.6)
-  blue_cylinder_trf.Rotate(90, 1, 0, 0)
+  orange_cylinder_trf = Transform()
+  orange_cylinder_trf.Scale(0.3, 0.7, 0.3)
+  orange_cylinder_trf.Translate(0, 3, 2)
+  orange_cylinder_trf.Rotate(90, 1, 0, 0)
 
   # -----------------------------
   #   SHADERS
@@ -279,7 +279,7 @@ def initialize (win):
 
       blue_cylinder_node = Node(
           instanced_shader,
-          blue_cylinder_trf,
+          orange_cylinder_trf,
           [orange_material],
           [cylinder_mesh]
       )
@@ -287,7 +287,7 @@ def initialize (win):
 
       blue_shadow = Node(
           shadow_shader,
-          blue_cylinder_trf,
+          orange_cylinder_trf,
           [
               PlanarShadow(light, box_plane_point, table_plane_normal),
               PolygonOffset(-1, -1),
